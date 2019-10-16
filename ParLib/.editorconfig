@@ -1,0 +1,4 @@
+﻿[*.cs]
+
+# CA1303: No pasar cadenas literal como parámetros localizados
+dotnet_diagnostic.CA1303.severity = none
