@@ -164,14 +164,13 @@ namespace ParLib.Sllz
 
         private static byte[] ZlibDecompress(byte[] compressedData)
         {
-            using (var inputMemoryStream = new MemoryStream(compressedData))
-            using (var outputMemoryStream = new MemoryStream())
-            using (var zlibStream = new ZlibStream(outputMemoryStream, CompressionMode.Decompress))
-            {
-                inputMemoryStream.CopyTo(zlibStream);
+            using var inputMemoryStream = new MemoryStream(compressedData);
+            using var outputMemoryStream = new MemoryStream();
+            using var zlibStream = new ZlibStream(outputMemoryStream, CompressionMode.Decompress);
 
-                return outputMemoryStream.ToArray();
-            }
+            inputMemoryStream.CopyTo(zlibStream);
+
+            return outputMemoryStream.ToArray();
         }
 
         private class FlagReader

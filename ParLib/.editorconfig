@@ -2,3 +2,6 @@
 
 # CA1303: No pasar cadenas literal como parámetros localizados
 dotnet_diagnostic.CA1303.severity = none
+
+# IDE0067: Desechar (Dispose) objetos antes de perder el ámbito
+dotnet_diagnostic.IDE0067.severity = none

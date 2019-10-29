@@ -22,7 +22,7 @@ namespace ParLib.Sllz
         private const int SearchSize = 4096;
         private const int MaxLength = 18;
 
-        private CompressorParameters parameters;
+        private CompressorParameters compressorParameters;
 
         /// <summary>
         /// Initializes the compressor parameters.
@@ -30,7 +30,7 @@ namespace ParLib.Sllz
         /// <param name="parameters">Compressor configuration.</param>
         public void Initialize(CompressorParameters parameters)
         {
-            this.parameters = parameters;
+            this.compressorParameters = parameters;
         }
 
         /// <summary>Compresses a SLLZ format.</summary>
@@ -43,7 +43,7 @@ namespace ParLib.Sllz
                 throw new ArgumentNullException(nameof(source));
             }
 
-            DataStream outputDataStream = Compress(source.Stream, this.parameters);
+            DataStream outputDataStream = Compress(source.Stream, this.compressorParameters);
 
             return new BinaryFormat(outputDataStream);
         }
@@ -158,10 +158,10 @@ namespace ParLib.Sllz
                         writer.Write((byte)0x00);
                     }
 
-                    var offset = (short)((match.Item1 - 1) << 4);
-                    var size = (short)((match.Item2 - 3) & 0x0F);
+                    short offset = (short)((match.Item1 - 1) << 4);
+                    short size = (short)((match.Item2 - 3) & 0x0F);
 
-                    var tuple = (short)(offset | size);
+                    short tuple = (short)(offset | size);
 
                     writer.Write(tuple);
 
@@ -242,7 +242,7 @@ namespace ParLib.Sllz
 
         private static int DataCompare(IReadOnlyList<byte> input, int pos1, int pos2, int maxLength)
         {
-            var length = 1;
+            int length = 1;
 
             while (length < maxLength && input[pos1] == input[pos2])
             {
@@ -256,15 +256,14 @@ namespace ParLib.Sllz
 
         private static byte[] ZlibCompress(byte[] uncompressedData)
         {
-            using (var inputMemoryStream = new MemoryStream(uncompressedData))
-            using (var outputMemoryStream = new MemoryStream())
-            using (var zlibStream = new ZlibStream(outputMemoryStream, CompressionMode.Compress, CompressionLevel.BestCompression))
-            {
-                inputMemoryStream.CopyTo(zlibStream);
-                zlibStream.Close();
+            using var inputMemoryStream = new MemoryStream(uncompressedData);
+            using var outputMemoryStream = new MemoryStream();
+            using var zlibStream = new ZlibStream(outputMemoryStream, CompressionMode.Compress, CompressionLevel.BestCompression);
 
-                return outputMemoryStream.ToArray();
-            }
+            inputMemoryStream.CopyTo(zlibStream);
+            zlibStream.Close();
+
+            return outputMemoryStream.ToArray();
         }
     }
 }
