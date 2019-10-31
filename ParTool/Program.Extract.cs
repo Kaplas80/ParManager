@@ -40,9 +40,14 @@ namespace ParTool
 
             Directory.CreateDirectory(opts.OutputFolder);
 
-            ParLib.Api.OnFileProcessed += (sender, info) =>
+            ParLib.Api.OnFileExtracting += (sender, info) =>
             {
                 Console.WriteLine($"Extracting {info.Path}...");
+            };
+
+            ParLib.Api.OnFileExtracted += (sender, info) =>
+            {
+                Console.WriteLine($"Extracted {info.Path}...");
             };
 
             ParLib.Api.Extract(opts.ParFile, opts.OutputFolder, opts.Recursive);
