@@ -1,6 +1,6 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
-// <copyright file="Api.List.cs" company="Kaplas80">
-// © Kaplas80. Licensed under MIT. See LICENSE for details.
+// <copyright file="Api.List.cs" company="Kaplas">
+// © Kaplas. Licensed under MIT. See LICENSE for details.
 // </copyright>
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -24,22 +24,24 @@ namespace ParLib
         /// <returns>A list with all the files details.</returns>
         public static IList<ParLib.Par.FileInfo> GetParContents(string parArchive)
         {
-            DataStream parDataStream = DataStreamFactory.FromFile(parArchive, FileOpenMode.Read);
-            using var parBinaryFormat = new BinaryFormat(parDataStream);
-
-            var nodeContainer = (NodeContainerFormat)ConvertFormat.With<ParBinaryToNodeContainer>(parBinaryFormat);
-
             var result = new List<ParLib.Par.FileInfo>();
-            foreach (Node node in Navigator.IterateNodes(nodeContainer.Root))
-            {
-                if (node.Format is ParLib.Par.FileInfo fileInfo)
-                {
-                    result.Add(fileInfo);
-                }
-            }
 
-            nodeContainer.Root.Dispose();
-            nodeContainer.Dispose();
+            DataStream parDataStream = DataStreamFactory.FromFile(parArchive, FileOpenMode.Read);
+            using (var parBinaryFormat = new BinaryFormat(parDataStream))
+            {
+                var nodeContainer = (NodeContainerFormat)ConvertFormat.With<ParBinaryToNodeContainer>(parBinaryFormat);
+
+                foreach (Node node in Navigator.IterateNodes(nodeContainer.Root))
+                {
+                    if (node.Format is ParLib.Par.FileInfo fileInfo)
+                    {
+                        result.Add(fileInfo);
+                    }
+                }
+
+                nodeContainer.Root.Dispose();
+                nodeContainer.Dispose();
+            }
 
             return result;
         }

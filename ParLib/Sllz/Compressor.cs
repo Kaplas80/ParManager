@@ -1,6 +1,6 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
-// <copyright file="Compressor.cs" company="Kaplas80">
-// © Kaplas80. Licensed under MIT. See LICENSE for details.
+// <copyright file="Compressor.cs" company="Kaplas">
+// © Kaplas. Licensed under MIT. See LICENSE for details.
 // </copyright>
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -256,14 +256,15 @@ namespace ParLib.Sllz
 
         private static byte[] ZlibCompress(byte[] uncompressedData)
         {
-            using var inputMemoryStream = new MemoryStream(uncompressedData);
-            using var outputMemoryStream = new MemoryStream();
-            using var zlibStream = new ZlibStream(outputMemoryStream, CompressionMode.Compress, CompressionLevel.BestCompression);
+            using (var inputMemoryStream = new MemoryStream(uncompressedData))
+            using (var outputMemoryStream = new MemoryStream())
+            using (var zlibStream = new ZlibStream(outputMemoryStream, CompressionMode.Compress, CompressionLevel.BestCompression))
+            {
+                inputMemoryStream.CopyTo(zlibStream);
+                zlibStream.Close();
 
-            inputMemoryStream.CopyTo(zlibStream);
-            zlibStream.Close();
-
-            return outputMemoryStream.ToArray();
+                return outputMemoryStream.ToArray();
+            }
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
-// <copyright file="Uncompressor.cs" company="Kaplas80">
-// © Kaplas80. Licensed under MIT. See LICENSE for details.
+// <copyright file="Uncompressor.cs" company="Kaplas">
+// © Kaplas. Licensed under MIT. See LICENSE for details.
 // </copyright>
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -164,13 +164,14 @@ namespace ParLib.Sllz
 
         private static byte[] ZlibDecompress(byte[] compressedData)
         {
-            using var inputMemoryStream = new MemoryStream(compressedData);
-            using var outputMemoryStream = new MemoryStream();
-            using var zlibStream = new ZlibStream(outputMemoryStream, CompressionMode.Decompress);
+            using (var inputMemoryStream = new MemoryStream(compressedData))
+            using (var outputMemoryStream = new MemoryStream())
+            using (var zlibStream = new ZlibStream(outputMemoryStream, CompressionMode.Decompress))
+            {
+                inputMemoryStream.CopyTo(zlibStream);
 
-            inputMemoryStream.CopyTo(zlibStream);
-
-            return outputMemoryStream.ToArray();
+                return outputMemoryStream.ToArray();
+            }
         }
 
         private class FlagReader

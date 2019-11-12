@@ -1,6 +1,6 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
-// <copyright file="FileInfo.cs" company="Kaplas80">
-// © Kaplas80. Licensed under MIT. See LICENSE for details.
+// <copyright file="FileInfo.cs" company="Kaplas">
+// © Kaplas. Licensed under MIT. See LICENSE for details.
 // </copyright>
 // ---------------------------------------------------------------------------------------------------------------------
 

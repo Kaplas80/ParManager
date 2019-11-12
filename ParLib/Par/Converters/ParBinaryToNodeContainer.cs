@@ -1,6 +1,6 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
-// <copyright file="ParBinaryToNodeContainer.cs" company="Kaplas80">
-// © Kaplas80. Licensed under MIT. See LICENSE for details.
+// <copyright file="ParBinaryToNodeContainer.cs" company="Kaplas">
+// © Kaplas. Licensed under MIT. See LICENSE for details.
 // </copyright>
 // ---------------------------------------------------------------------------------------------------------------------
 
