@@ -1,6 +1,6 @@
 ﻿// ---------------------------------------------------------------------------------------------------------------------
-// <copyright file="Api.Extract.cs" company="Kaplas80">
-// © Kaplas80. Licensed under MIT. See LICENSE for details.
+// <copyright file="Api.Extract.cs" company="Kaplas">
+// © Kaplas. Licensed under MIT. See LICENSE for details.
 // </copyright>
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -37,14 +37,15 @@ namespace ParLib
         public static void Extract(string parArchive, string outputFolder, in bool recursive)
         {
             DataStream parDataStream = DataStreamFactory.FromFile(parArchive, FileOpenMode.Read);
-            using var parBinaryFormat = new BinaryFormat(parDataStream);
+            using (var parBinaryFormat = new BinaryFormat(parDataStream))
+            {
+                var nodeContainer = (NodeContainerFormat)ConvertFormat.With<ParBinaryToNodeContainer>(parBinaryFormat);
 
-            var nodeContainer = (NodeContainerFormat)ConvertFormat.With<ParBinaryToNodeContainer>(parBinaryFormat);
+                Extract(nodeContainer, outputFolder, recursive);
 
-            Extract(nodeContainer, outputFolder, recursive);
-
-            nodeContainer.Root.Dispose();
-            nodeContainer.Dispose();
+                nodeContainer.Root.Dispose();
+                nodeContainer.Dispose();
+            }
         }
 
         private static void Extract(NodeContainerFormat nodeContainer, string outputFolder, in bool recursive)
