@@ -1,44 +1,36 @@
-﻿// ---------------------------------------------------------------------------------------------------------------------
-// <copyright file="Program.List.cs" company="Kaplas">
+﻿// -------------------------------------------------------
 // © Kaplas. Licensed under MIT. See LICENSE for details.
-// </copyright>
-// ---------------------------------------------------------------------------------------------------------------------
-
+// -------------------------------------------------------
 namespace ParTool
 {
     using System;
-    using System.Collections.Generic;
     using System.IO;
-    using CommandLine;
+    using ParLib;
+    using Yarhl.FileSystem;
 
     /// <summary>
     /// List contents functionality.
     /// </summary>
     internal static partial class Program
     {
-        private static void List(ListOptions opts)
+        private static void List(Options.List opts)
         {
             WriteHeader();
 
-            if (!File.Exists(opts.ParFile))
+            if (!File.Exists(opts.ParArchivePath))
             {
-                Console.WriteLine($"ERROR: \"{opts.ParFile}\" not found!!!!");
+                Console.WriteLine($"ERROR: \"{opts.ParArchivePath}\" not found!!!!");
                 return;
             }
 
-            IList<ParLib.Par.FileInfo> parContents = ParLib.Api.GetParContents(opts.ParFile);
-
-            foreach (ParLib.Par.FileInfo info in parContents)
+            using ParArchive parArchive = ParArchive.FromFile(opts.ParArchivePath);
+            foreach (Node node in Navigator.IterateNodes(parArchive.Root))
             {
-                Console.WriteLine($"{info.Path}\t{info.Size} bytes\t{info.FileDate:G}");
+                if (node.Format is ParLib.Par.FileInfo fileInfo)
+                {
+                    Console.WriteLine($"{fileInfo.Path}\t{fileInfo.Size} bytes\t{fileInfo.FileDate:G}");
+                }
             }
-        }
-
-        [Verb("list", HelpText = "Show contents from a Yakuza PAR file.")]
-        private class ListOptions
-        {
-            [Option('i', "input", Required = true, HelpText = "Yakuza PAR file")]
-            public string ParFile { get; set; }
         }
     }
 }

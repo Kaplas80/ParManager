@@ -1,9 +1,6 @@
-﻿// ---------------------------------------------------------------------------------------------------------------------
-// <copyright file="ParBinaryToNodeContainer.cs" company="Kaplas">
+﻿// -------------------------------------------------------
 // © Kaplas. Licensed under MIT. See LICENSE for details.
-// </copyright>
-// ---------------------------------------------------------------------------------------------------------------------
-
+// -------------------------------------------------------
 namespace ParLib.Par.Converters
 {
     using System;
@@ -18,18 +15,14 @@ namespace ParLib.Par.Converters
     /// Converter for Binary streams into a file system following the
     /// PARC tree format.
     /// </summary>
-    [SuppressMessage(
-        "Reliability",
-        "CA2000:Dispose objects before losing scope",
-        Justification = "Ownership dispose transferred")]
-    public class ParBinaryToNodeContainer : IConverter<BinaryFormat, NodeContainerFormat>
+    public class ParArchiveReader : IConverter<BinaryFormat, ParArchive>
     {
         /// <summary>
         /// Converts a binary stream into a file system with the Par format.
         /// </summary>
         /// <param name="source">The binary stream to convert.</param>
         /// <returns>The file system from the PARC stream.</returns>
-        public NodeContainerFormat Convert(BinaryFormat source)
+        public ParArchive Convert(BinaryFormat source)
         {
             if (source == null)
             {
@@ -141,15 +134,17 @@ namespace ParLib.Par.Converters
             return BuildContainer(folderInfos, fileInfos);
         }
 
-        private static NodeContainerFormat BuildContainer(IReadOnlyList<FolderInfo> folderInfos, IReadOnlyList<FileInfo> fileInfos)
+        [SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "Ownserhip dispose transferred")]
+        private static ParArchive BuildContainer(IReadOnlyList<FolderInfo> folderInfos, IReadOnlyList<FileInfo> fileInfos)
         {
-            Node root = NodeFactory.CreateContainer(folderInfos[0].Name);
+            var root = new Node(folderInfos[0].Name, new ParArchive());
 
             BuildNode(root, folderInfos[0], folderInfos, fileInfos);
 
-            return root.Format as NodeContainerFormat;
+            return root.Format as ParArchive;
         }
 
+        [SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "Ownserhip dispose transferred")]
         private static void BuildNode(Node node, FolderInfo info, IReadOnlyList<FolderInfo> folderInfos, IReadOnlyList<FileInfo> fileInfos)
         {
             for (int i = info.FirstFolderIndex; i < info.FirstFolderIndex + info.FolderCount; i++)

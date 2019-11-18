@@ -1,32 +1,30 @@
-﻿// ---------------------------------------------------------------------------------------------------------------------
-// <copyright file="Program.Extract.cs" company="Kaplas">
+﻿// -------------------------------------------------------
 // © Kaplas. Licensed under MIT. See LICENSE for details.
-// </copyright>
-// ---------------------------------------------------------------------------------------------------------------------
-
+// -------------------------------------------------------
 namespace ParTool
 {
     using System;
     using System.IO;
-    using CommandLine;
+    using ParLib;
+    using ParLib.Par.Converters;
+    using Yarhl.FileSystem;
 
     /// <summary>
     /// Extract contents functionality.
     /// </summary>
     internal static partial class Program
     {
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1303:No pasar cadenas literal como parámetros localizados", Justification = "<pendiente>")]
-        private static void Extract(ExtractOptions opts)
+        private static void Extract(Options.Extract opts)
         {
             WriteHeader();
 
-            if (!File.Exists(opts.ParFile))
+            if (!File.Exists(opts.ParArchivePath))
             {
-                Console.WriteLine($"ERROR: \"{opts.ParFile}\" not found!!!!");
+                Console.WriteLine($"ERROR: \"{opts.ParArchivePath}\" not found!!!!");
                 return;
             }
 
-            if (Directory.Exists(opts.OutputFolder))
+            if (Directory.Exists(opts.OutputDirectory))
             {
                 Console.WriteLine("WARNING: Output directory already exists. Its contents may be overwritten.");
                 Console.Write("Continue? (y/N) ");
@@ -38,32 +36,50 @@ namespace ParTool
                 }
             }
 
-            Directory.CreateDirectory(opts.OutputFolder);
+            Directory.CreateDirectory(opts.OutputDirectory);
 
-            ParLib.Api.OnFileExtracting += (sender, info) =>
-            {
-                Console.WriteLine($"Extracting {info.Path}...");
-            };
+            using ParArchive parArchive = ParArchive.FromFile(opts.ParArchivePath);
 
-            ParLib.Api.OnFileExtracted += (sender, info) =>
-            {
-                Console.WriteLine($"Extracted {info.Path}...");
-            };
-
-            ParLib.Api.Extract(opts.ParFile, opts.OutputFolder, opts.Recursive);
+            ExtractAll(parArchive, opts.OutputDirectory, string.Empty, opts.Recursive);
         }
 
-        [Verb("extract", HelpText = "Extract contents from a Yakuza PAR file.")]
-        private class ExtractOptions
+        private static void ExtractAll(NodeContainerFormat parArchive, string outputFolder, string basePath = "", bool recursive = false)
         {
-            [Option('i', "input", Required = true, HelpText = "Yakuza PAR file")]
-            public string ParFile { get; set; }
+            foreach (Node node in Navigator.IterateNodes(parArchive.Root))
+            {
+                if (!(node.Format is ParLib.Par.FileInfo fileInfo))
+                {
+                    continue;
+                }
 
-            [Option('o', "output", Required = true, HelpText = "Output directory")]
-            public string OutputFolder { get; set; }
+                Console.Write($"Extracting {basePath}{fileInfo.Path}... ");
 
-            [Option("recursive", Required = false, Default = false, HelpText = "Extract recursively")]
-            public bool Recursive { get; set; }
+                string fileInfoPath = fileInfo.Path.Replace('/', Path.DirectorySeparatorChar);
+                string outputPath = string.Concat(outputFolder, fileInfoPath);
+                Directory.CreateDirectory(Path.GetDirectoryName(outputPath));
+
+                if (fileInfo.IsCompressed)
+                {
+                    node.TransformWith<ParLib.Sllz.Uncompressor>();
+                }
+
+                if (recursive && fileInfo.Name.EndsWith(".PAR", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    Console.WriteLine();
+
+                    using var childContainer = node.TransformWith<ParArchiveReader>().GetFormatAs<ParArchive>();
+                    string childOutputFolder = string.Concat(outputPath, ".unpack");
+                    ExtractAll(childContainer, childOutputFolder, $"{basePath}{fileInfo.Path}", true);
+                }
+                else
+                {
+                    node.Stream.WriteTo(outputPath);
+                    File.SetCreationTime(outputPath, fileInfo.FileDate);
+                    File.SetLastWriteTime(outputPath, fileInfo.FileDate);
+                }
+
+                Console.WriteLine("DONE!");
+            }
         }
     }
 }

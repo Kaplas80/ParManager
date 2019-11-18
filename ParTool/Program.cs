@@ -1,9 +1,6 @@
-﻿// ---------------------------------------------------------------------------------------------------------------------
-// <copyright file="Program.cs" company="Kaplas80">
-// © Kaplas80. Licensed under MIT. See LICENSE for details.
-// </copyright>
-// ---------------------------------------------------------------------------------------------------------------------
-
+﻿// -------------------------------------------------------
+// © Kaplas. Licensed under MIT. See LICENSE for details.
+// -------------------------------------------------------
 namespace ParTool
 {
     using System;
@@ -16,9 +13,9 @@ namespace ParTool
     {
         private static void Main(string[] args)
         {
-            CommandLine.Parser.Default.ParseArguments<ListOptions, ExtractOptions>(args)
-                .WithParsed<ListOptions>(List)
-                .WithParsed<ExtractOptions>(Extract);
+            CommandLine.Parser.Default.ParseArguments<Options.List, Options.Extract>(args)
+                .WithParsed<Options.List>(List)
+                .WithParsed<Options.Extract>(Extract);
         }
 
         private static void WriteHeader()
