@@ -24,6 +24,32 @@ namespace ParLibrary.Converter
             CompressorVersion = 0x01,
         };
 
+        /// <summary>
+        /// Represents the method that handles a Node event.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        public delegate void NodeEventHandler(Node sender);
+
+        /// <summary>
+        /// Occurs before the nested PAR file is created.
+        /// </summary>
+        public static event NodeEventHandler NestedParCreating;
+
+        /// <summary>
+        /// Occurs after the nested PAR file is created.
+        /// </summary>
+        public static event NodeEventHandler NestedParCreated;
+
+        /// <summary>
+        /// Occurs before the file is compressed.
+        /// </summary>
+        public static event NodeEventHandler FileCompressing;
+
+        /// <summary>
+        /// Occurs after the file is compressed.
+        /// </summary>
+        public static event NodeEventHandler FileCompressed;
+
         /// <inheritdoc />
         public void Initialize(ParArchiveWriterParameters parameters)
         {
@@ -125,7 +151,9 @@ namespace ParLibrary.Converter
                     {
                         if (child.Name.EndsWith(".PAR", StringComparison.InvariantCultureIgnoreCase))
                         {
+                            NestedParCreating?.Invoke(child);
                             child.TransformWith<ParArchiveWriter>();
+                            NestedParCreated?.Invoke(child);
 
                             files.Add(child);
                             fileIndex++;
@@ -162,15 +190,21 @@ namespace ParLibrary.Converter
             Parallel.ForEach(files, node =>
             {
                 var parFile = node.GetFormatAs<ParFile>();
-                if (parFile == null)
+                if (parFile == null || !parFile.CanBeCompressed)
                 {
                     return;
                 }
 
-                if (parFile.CanBeCompressed)
+                FileCompressing?.Invoke(node);
+                var compressed = (ParFile)ConvertFormat.With<Compressor, CompressorParameters>(compressorParameters, parFile);
+
+                long diff = parFile.Stream.Length - compressed.Stream.Length;
+                if (parFile.Stream.Length < 2048 || diff >= 2048)
                 {
-                    node.TransformWith<Compressor, CompressorParameters>(compressorParameters);
+                    node.ChangeFormat(compressed);
                 }
+
+                FileCompressed?.Invoke(node);
             });
         }
 

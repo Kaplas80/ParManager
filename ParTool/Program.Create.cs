@@ -39,9 +39,18 @@ namespace ParTool
 
             Directory.CreateDirectory(Path.GetDirectoryName(opts.ParArchivePath));
 
+            Console.Write("Reading input directory... ");
             Node node = NodeFactory.FromDirectory(opts.InputDirectory, "*", ".", true);
+            Console.WriteLine("DONE!");
+
+            ParArchiveWriter.NestedParCreating += sender => Console.WriteLine($"Creating nested PAR {sender.Name}... ");
+            ParArchiveWriter.NestedParCreated += sender => Console.WriteLine($"{sender.Name} created!");
+            ParArchiveWriter.FileCompressing += sender => Console.WriteLine($"Compressing {sender.Name}... ");
+
+            Console.WriteLine("Creating PAR (this may take a while)... ");
             node.TransformWith<ParArchiveWriter>();
             node.Stream.WriteTo(opts.ParArchivePath);
+            Console.WriteLine("DONE!");
         }
     }
 }
