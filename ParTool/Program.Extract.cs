@@ -5,9 +5,10 @@ namespace ParTool
 {
     using System;
     using System.IO;
-    using ParLib;
-    using ParLib.Par.Converters;
+    using ParLibrary;
+    using ParLibrary.Converter;
     using Yarhl.FileSystem;
+    using Yarhl.IO;
 
     /// <summary>
     /// Extract contents functionality.
@@ -38,45 +39,43 @@ namespace ParTool
 
             Directory.CreateDirectory(opts.OutputDirectory);
 
-            using ParArchive parArchive = ParArchive.FromFile(opts.ParArchivePath);
+            var parameters = new ParArchiveReaderParameters
+            {
+                Recursive = opts.Recursive,
+            };
 
-            ExtractAll(parArchive, opts.OutputDirectory, string.Empty, opts.Recursive);
+            using Node par = NodeFactory.FromFile(opts.ParArchivePath);
+            par.TransformWith<ParArchiveReader, ParArchiveReaderParameters>(parameters);
+
+            var extractionNode = new Node(".", par.Format);
+            Extract(extractionNode, opts.OutputDirectory);
         }
 
-        private static void ExtractAll(NodeContainerFormat parArchive, string outputFolder, string basePath = "", bool recursive = false)
+        private static void Extract(Node parNode, string outputFolder)
         {
-            foreach (Node node in Navigator.IterateNodes(parArchive.Root))
+            foreach (Node node in Navigator.IterateNodes(parNode))
             {
-                if (!(node.Format is ParLib.Par.FileInfo fileInfo))
+                var file = node.GetFormatAs<ParFile>();
+                if (file == null)
                 {
                     continue;
                 }
 
-                Console.Write($"Extracting {basePath}{fileInfo.Path}... ");
+                Console.Write($"Extracting {node.Path}... ");
 
-                string fileInfoPath = fileInfo.Path.Replace('/', Path.DirectorySeparatorChar);
-                string outputPath = string.Concat(outputFolder, fileInfoPath);
+                string fileInfoPath = node.Path.Replace('/', Path.DirectorySeparatorChar);
+                string outputPath = Path.Join(outputFolder, fileInfoPath);
                 Directory.CreateDirectory(Path.GetDirectoryName(outputPath));
 
-                if (fileInfo.IsCompressed)
+                if (file.IsCompressed)
                 {
-                    node.TransformWith<ParLib.Sllz.Uncompressor>();
+                    node.TransformWith<ParLibrary.Sllz.Decompressor>();
                 }
 
-                if (recursive && fileInfo.Name.EndsWith(".PAR", StringComparison.InvariantCultureIgnoreCase))
-                {
-                    Console.WriteLine();
-
-                    using var childContainer = node.TransformWith<ParArchiveReader>().GetFormatAs<ParArchive>();
-                    string childOutputFolder = string.Concat(outputPath, ".unpack");
-                    ExtractAll(childContainer, childOutputFolder, $"{basePath}{fileInfo.Path}", true);
-                }
-                else
-                {
-                    node.Stream.WriteTo(outputPath);
-                    File.SetCreationTime(outputPath, fileInfo.FileDate);
-                    File.SetLastWriteTime(outputPath, fileInfo.FileDate);
-                }
+                node.Stream.WriteTo(outputPath);
+                File.SetAttributes(outputPath, (FileAttributes)file.Attributes);
+                File.SetCreationTime(outputPath, file.FileDate);
+                File.SetLastWriteTime(outputPath, file.FileDate);
 
                 Console.WriteLine("DONE!");
             }

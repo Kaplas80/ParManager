@@ -17,11 +17,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ParLib\ParLib.csproj" />
+    <Folder Include="Properties\" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Properties\" />
+    <ProjectReference Include="..\ParLibrary\ParLibrary.csproj" />
+    <ProjectReference Include="..\Yarhl\src\Yarhl\Yarhl.csproj" />
   </ItemGroup>
 
 </Project>

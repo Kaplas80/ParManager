@@ -17,5 +17,11 @@ namespace ParTool.Options
         /// </summary>
         [Value(0, MetaName = "archive", Required = true, HelpText = "Yakuza PAR archive path.")]
         public string ParArchivePath { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the list is recursive.
+        /// </summary>
+        [Option('r', "recursive", Default = false, HelpText = "List nested PAR archives.")]
+        public bool Recursive { get; set; }
     }
 }
