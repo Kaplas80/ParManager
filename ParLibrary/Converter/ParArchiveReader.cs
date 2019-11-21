@@ -6,7 +6,6 @@ namespace ParLibrary.Converter
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
-    using System.IO;
     using System.Text;
     using Yarhl.FileFormat;
     using Yarhl.FileSystem;
@@ -108,7 +107,6 @@ namespace ParLibrary.Converter
 
             reader.Stream.Seek(fileInfoOffset);
             var files = new Node[totalFileCount];
-            var baseDate = new DateTime(1970, 1, 1);
 
             for (int i = 0; i < totalFileCount; i++)
             {
@@ -121,19 +119,18 @@ namespace ParLibrary.Converter
                 int unknown3 = reader.ReadInt32();
                 int date = reader.ReadInt32();
 
-                files[i] = new Node(fileNames[i], new BinaryFormat(source.Stream, offset, compressedSize))
+                var file = new ParFile(source.Stream, offset, compressedSize)
                 {
-                    Tags =
-                    {
-                        ["CanBeCompressed"] = compressionFlag == 0x00000000,
-                        ["IsCompressed"] = compressionFlag == 0x80000000,
-                        ["DecompressedSize"] = size,
-                        ["Attributes"] = (FileAttributes)attributes,
-                        ["Unknown2"] = unknown2,
-                        ["Unknown3"] = unknown3,
-                        ["FileDate"] = baseDate.AddSeconds(date),
-                    },
+                    CanBeCompressed = compressionFlag == 0x00000000,
+                    IsCompressed = compressionFlag == 0x80000000,
+                    DecompressedSize = size,
+                    Attributes = attributes,
+                    Unknown2 = unknown2,
+                    Unknown3 = unknown3,
+                    Date = date,
                 };
+
+                files[i] = new Node(fileNames[i], file);
             }
 
             BuildTree(folders[0], folders, files, this.parameters.Recursive);

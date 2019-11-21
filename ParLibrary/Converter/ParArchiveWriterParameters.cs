@@ -12,10 +12,5 @@ namespace ParLibrary.Converter
         /// Gets or sets the compressor version to use.
         /// </summary>
         public int CompressorVersion { get; set; }
-
-        /// <summary>
-        /// Gets or sets the output file path.
-        /// </summary>
-        public string OutputFile { get; set; }
     }
 }

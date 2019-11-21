@@ -55,7 +55,7 @@ namespace ParTool
         {
             foreach (Node node in Navigator.IterateNodes(parNode))
             {
-                var file = node.GetFormatAs<BinaryFormat>();
+                var file = node.GetFormatAs<ParFile>();
                 if (file == null)
                 {
                     continue;
@@ -67,15 +67,15 @@ namespace ParTool
                 string outputPath = Path.Join(outputFolder, fileInfoPath);
                 Directory.CreateDirectory(Path.GetDirectoryName(outputPath));
 
-                if (node.Tags["IsCompressed"])
+                if (file.IsCompressed)
                 {
                     node.TransformWith<ParLibrary.Sllz.Decompressor>();
                 }
 
                 node.Stream.WriteTo(outputPath);
-                File.SetAttributes(outputPath, node.Tags["Attributes"]);
-                File.SetCreationTime(outputPath, node.Tags["FileDate"]);
-                File.SetLastWriteTime(outputPath, node.Tags["FileDate"]);
+                File.SetAttributes(outputPath, (FileAttributes)file.Attributes);
+                File.SetCreationTime(outputPath, file.FileDate);
+                File.SetLastWriteTime(outputPath, file.FileDate);
 
                 Console.WriteLine("DONE!");
             }

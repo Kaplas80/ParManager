@@ -13,12 +13,12 @@ namespace ParLibrary.Sllz
     /// <summary>
     /// Manages SLLZ compression used in Yakuza games.
     /// </summary>
-    public class Decompressor : IConverter<BinaryFormat, BinaryFormat>
+    public class Decompressor : IConverter<ParFile, ParFile>
     {
         /// <summary>Decompresses a SLLZ file.</summary>
         /// <returns>The decompressed file.</returns>
         /// <param name="source">Source file to decompress.</param>
-        public BinaryFormat Convert(BinaryFormat source)
+        public ParFile Convert(ParFile source)
         {
             if (source == null)
             {
@@ -27,7 +27,15 @@ namespace ParLibrary.Sllz
 
             DataStream outputDataStream = Decompress(source.Stream);
 
-            var result = new BinaryFormat(outputDataStream);
+            var result = new ParFile(outputDataStream)
+            {
+                IsCompressed = false,
+                DecompressedSize = source.DecompressedSize,
+                Attributes = source.Attributes,
+                Unknown2 = source.Unknown2,
+                Unknown3 = source.Unknown3,
+                Date = source.Date,
+            };
 
             return result;
         }
