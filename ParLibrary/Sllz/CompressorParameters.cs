@@ -1,7 +1,7 @@
 ﻿// -------------------------------------------------------
 // © Kaplas. Licensed under MIT. See LICENSE for details.
 // -------------------------------------------------------
-namespace ParLib.Sllz
+namespace ParLibrary.Sllz
 {
     /// <summary>
     /// Parameters for SLLZ compressor.

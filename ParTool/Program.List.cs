@@ -5,7 +5,8 @@ namespace ParTool
 {
     using System;
     using System.IO;
-    using ParLib;
+    using ParLibrary;
+    using ParLibrary.Converter;
     using Yarhl.FileSystem;
 
     /// <summary>
@@ -23,12 +24,20 @@ namespace ParTool
                 return;
             }
 
-            using ParArchive parArchive = ParArchive.FromFile(opts.ParArchivePath);
-            foreach (Node node in Navigator.IterateNodes(parArchive.Root))
+            var parameters = new ParArchiveReaderParameters
             {
-                if (node.Format is ParLib.Par.FileInfo fileInfo)
+                Recursive = opts.Recursive,
+            };
+
+            using Node par = ParLibrary.NodeFactory.FromFile(opts.ParArchivePath);
+            par.TransformWith<ParArchiveReader, ParArchiveReaderParameters>(parameters);
+
+            foreach (Node node in Navigator.IterateNodes(par))
+            {
+                var file = node.GetFormatAs<ParFile>();
+                if (file != null)
                 {
-                    Console.WriteLine($"{fileInfo.Path}\t{fileInfo.Size} bytes\t{fileInfo.FileDate:G}");
+                    Console.WriteLine($"{node.Path}\t{file.DecompressedSize} bytes\t{file.FileDate:G}");
                 }
             }
         }

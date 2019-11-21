@@ -1,17 +1,29 @@
 ﻿// -------------------------------------------------------
 // © Kaplas. Licensed under MIT. See LICENSE for details.
 // -------------------------------------------------------
-namespace ParLib.Par
+namespace ParLibrary
 {
+    using Yarhl.FileSystem;
+
     /// <summary>
-    ///     Folder information stored in a .par archive.
+    /// Represents a folder stored in a PAR archive.
     /// </summary>
-    public class FolderInfo
+    public class ParFolder : NodeContainerFormat
     {
         /// <summary>
-        /// Gets or sets the folder name.
+        /// Initializes a new instance of the <see cref="ParFolder"/> class.
         /// </summary>
-        public string Name { get; set; }
+        public ParFolder()
+        {
+            this.FolderCount = 0;
+            this.FirstFolderIndex = 0;
+            this.FileCount = 0;
+            this.FirstFileIndex = 0;
+            this.Unknown1 = 0x00000010;
+            this.Unknown2 = 0x00000000;
+            this.Unknown3 = 0x00000000;
+            this.Unknown4 = 0x00000000;
+        }
 
         /// <summary>
         ///     Gets or sets the number of folders inside this folder.

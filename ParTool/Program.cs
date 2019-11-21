@@ -13,9 +13,10 @@ namespace ParTool
     {
         private static void Main(string[] args)
         {
-            CommandLine.Parser.Default.ParseArguments<Options.List, Options.Extract>(args)
+            CommandLine.Parser.Default.ParseArguments<Options.List, Options.Extract, Options.Create>(args)
                 .WithParsed<Options.List>(List)
-                .WithParsed<Options.Extract>(Extract);
+                .WithParsed<Options.Extract>(Extract)
+                .WithParsed<Options.Create>(Create);
         }
 
         private static void WriteHeader()

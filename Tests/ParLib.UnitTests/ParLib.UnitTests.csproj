@@ -18,7 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\ParLib\ParLib.csproj" />
+    <ProjectReference Include="..\..\ParLibrary\ParLibrary.csproj" />
   </ItemGroup>
 
 </Project>

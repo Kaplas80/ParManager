@@ -1,7 +1,7 @@
 ﻿// -------------------------------------------------------
 // © Kaplas. Licensed under MIT. See LICENSE for details.
 // -------------------------------------------------------
-namespace ParLib.Par.Converters
+namespace ParLibrary.Converter
 {
     using System;
     using System.Collections.Generic;
@@ -12,22 +12,34 @@ namespace ParLib.Par.Converters
     using Yarhl.IO;
 
     /// <summary>
-    /// Converter for Binary streams into a file system following the
-    /// PARC tree format.
+    /// Converter from BinaryFormat to ParArchive.
     /// </summary>
-    public class ParArchiveReader : IConverter<BinaryFormat, ParArchive>
+    public class ParArchiveReader : IInitializer<ParArchiveReaderParameters>, IConverter<BinaryFormat, NodeContainerFormat>
     {
+        private ParArchiveReaderParameters parameters = new ParArchiveReaderParameters
+        {
+            Recursive = false,
+        };
+
         /// <summary>
-        /// Converts a binary stream into a file system with the Par format.
+        /// Initializes reader parameters.
         /// </summary>
-        /// <param name="source">The binary stream to convert.</param>
-        /// <returns>The file system from the PARC stream.</returns>
-        public ParArchive Convert(BinaryFormat source)
+        /// <param name="parameters">The parameters.</param>
+        public void Initialize(ParArchiveReaderParameters parameters)
+        {
+            this.parameters = parameters;
+        }
+
+        /// <inheritdoc/>
+        [SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "Ownserhip dispose transferred")]
+        public NodeContainerFormat Convert(BinaryFormat source)
         {
             if (source == null)
             {
                 throw new ArgumentNullException(nameof(source));
             }
+
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
             var reader = new DataReader(source.Stream)
             {
@@ -73,26 +85,12 @@ namespace ParLib.Par.Converters
             }
 
             reader.Stream.Seek(folderInfoOffset);
-            var folderInfos = new FolderInfo[totalFolderCount];
+            var folders = new Node[totalFolderCount];
 
-            folderInfos[0] = new FolderInfo
+            for (int i = 0; i < totalFolderCount; i++)
             {
-                Name = folderNames[0],
-                FolderCount = reader.ReadInt32(),
-                FirstFolderIndex = reader.ReadInt32(),
-                FileCount = reader.ReadInt32(),
-                FirstFileIndex = reader.ReadInt32(),
-                Unknown1 = reader.ReadInt32(),
-                Unknown2 = reader.ReadInt32(),
-                Unknown3 = reader.ReadInt32(),
-                Unknown4 = reader.ReadInt32(),
-            };
-
-            for (int i = 1; i < totalFolderCount; i++)
-            {
-                folderInfos[i] = new FolderInfo
+                var folder = new ParFolder
                 {
-                    Name = folderNames[i],
                     FolderCount = reader.ReadInt32(),
                     FirstFolderIndex = reader.ReadInt32(),
                     FileCount = reader.ReadInt32(),
@@ -102,10 +100,12 @@ namespace ParLib.Par.Converters
                     Unknown3 = reader.ReadInt32(),
                     Unknown4 = reader.ReadInt32(),
                 };
+
+                folders[i] = new Node(folderNames[i], folder);
             }
 
             reader.Stream.Seek(fileInfoOffset);
-            var fileInfos = new FileInfo[totalFileCount];
+            var files = new Node[totalFileCount];
             for (int i = 0; i < totalFileCount; i++)
             {
                 uint compressionFlag = reader.ReadUInt32();
@@ -117,49 +117,44 @@ namespace ParLib.Par.Converters
                 int unknown3 = reader.ReadInt32();
                 int date = reader.ReadInt32();
 
-                fileInfos[i] = new FileInfo(source.Stream, offset, compressedSize)
+                var file = new ParFile(source.Stream, offset, compressedSize)
                 {
-                    Name = fileNames[i],
                     IsCompressed = compressionFlag == 0x80000000,
-                    Size = size,
-                    CompressedSize = compressedSize,
-                    Offset = offset,
+                    DecompressedSize = size,
                     Unknown1 = unknown1,
                     Unknown2 = unknown2,
                     Unknown3 = unknown3,
                     Date = date,
                 };
+
+                files[i] = new Node(fileNames[i], file);
             }
 
-            return BuildContainer(folderInfos, fileInfos);
+            BuildTree(folders[0], folders, files, this.parameters.Recursive);
+
+            var result = new NodeContainerFormat();
+            result.Root.Add(folders[0].Children);
+            return result;
         }
 
-        [SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "Ownserhip dispose transferred")]
-        private static ParArchive BuildContainer(IReadOnlyList<FolderInfo> folderInfos, IReadOnlyList<FileInfo> fileInfos)
+        private static void BuildTree(Node node, IReadOnlyList<Node> folders, IReadOnlyList<Node> files, bool recursive)
         {
-            var root = new Node(folderInfos[0].Name, new ParArchive());
+            var nodeFormat = node.GetFormatAs<ParFolder>();
 
-            BuildNode(root, folderInfos[0], folderInfos, fileInfos);
-
-            return root.Format as ParArchive;
-        }
-
-        [SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "Ownserhip dispose transferred")]
-        private static void BuildNode(Node node, FolderInfo info, IReadOnlyList<FolderInfo> folderInfos, IReadOnlyList<FileInfo> fileInfos)
-        {
-            for (int i = info.FirstFolderIndex; i < info.FirstFolderIndex + info.FolderCount; i++)
+            for (int i = nodeFormat.FirstFolderIndex; i < nodeFormat.FirstFolderIndex + nodeFormat.FolderCount; i++)
             {
-                var child = new Node(folderInfos[i].Name);
-                node.Add(child);
-                BuildNode(child, folderInfos[i], folderInfos, fileInfos);
+                node.Add(folders[i]);
+                BuildTree(folders[i], folders, files, recursive);
             }
 
-            for (int i = info.FirstFileIndex; i < info.FirstFileIndex + info.FileCount;
-                i++)
+            for (int i = nodeFormat.FirstFileIndex; i < nodeFormat.FirstFileIndex + nodeFormat.FileCount; i++)
             {
-                var child = new Node(fileInfos[i].Name, fileInfos[i]);
-                node.Add(child);
-                fileInfos[i].Path = child.Path;
+                if (recursive && files[i].Name.EndsWith(".PAR", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    files[i].TransformWith<ParArchiveReader>();
+                }
+
+                node.Add(files[i]);
             }
         }
     }

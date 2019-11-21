@@ -1,7 +1,7 @@
 ﻿// -------------------------------------------------------
 // © Kaplas. Licensed under MIT. See LICENSE for details.
 // -------------------------------------------------------
-namespace ParLib.Sllz
+namespace ParLibrary.Sllz
 {
     using System;
     using System.IO;
@@ -13,24 +13,34 @@ namespace ParLib.Sllz
     /// <summary>
     /// Manages SLLZ compression used in Yakuza games.
     /// </summary>
-    public class Uncompressor : IConverter<BinaryFormat, BinaryFormat>
+    public class Decompressor : IConverter<ParFile, ParFile>
     {
-        /// <summary>Uncompresses a SLLZ format.</summary>
-        /// <returns>The uncompressed format.</returns>
-        /// <param name="source">Source format to convert.</param>
-        public BinaryFormat Convert(BinaryFormat source)
+        /// <summary>Decompresses a SLLZ file.</summary>
+        /// <returns>The decompressed file.</returns>
+        /// <param name="source">Source file to decompress.</param>
+        public ParFile Convert(ParFile source)
         {
             if (source == null)
             {
                 throw new ArgumentNullException(nameof(source));
             }
 
-            DataStream outputDataStream = Uncompress(source.Stream);
+            DataStream outputDataStream = Decompress(source.Stream);
 
-            return new BinaryFormat(outputDataStream);
+            var result = new ParFile(outputDataStream)
+            {
+                IsCompressed = false,
+                DecompressedSize = source.DecompressedSize,
+                Unknown1 = source.Unknown1,
+                Unknown2 = source.Unknown2,
+                Unknown3 = source.Unknown3,
+                Date = source.Date,
+            };
+
+            return result;
         }
 
-        private static DataStream Uncompress(DataStream inputDataStream)
+        private static DataStream Decompress(DataStream inputDataStream)
         {
             var reader = new DataReader(inputDataStream)
             {
@@ -51,25 +61,25 @@ namespace ParLib.Sllz
             byte version = reader.ReadByte();
             ushort headerSize = reader.ReadUInt16();
 
-            int uncompressedSize = reader.ReadInt32();
+            int decompressedSize = reader.ReadInt32();
             reader.ReadInt32(); // Compressed Size
 
             reader.Stream.Seek(headerSize, SeekMode.Start);
 
             if (version == 1)
             {
-                return UncompressV1(inputDataStream, uncompressedSize);
+                return DecompressV1(inputDataStream, decompressedSize);
             }
 
             if (version == 2)
             {
-                return UncompressV2(inputDataStream, uncompressedSize);
+                return DecompressV2(inputDataStream, decompressedSize);
             }
 
             throw new FormatException($"SLLZ: Unknown compression version {version}.");
         }
 
-        private static DataStream UncompressV1(DataStream inputDataStream, int uncompressedSize)
+        private static DataStream DecompressV1(DataStream inputDataStream, int decompressedSize)
         {
             var reader = new DataReader(inputDataStream);
 
@@ -78,7 +88,7 @@ namespace ParLib.Sllz
 
             var flagReader = new FlagReader(inputDataStream);
 
-            while (writer.Stream.Position < uncompressedSize)
+            while (writer.Stream.Position < decompressedSize)
             {
                 int flag = flagReader.ReadFlag();
 
@@ -99,15 +109,15 @@ namespace ParLib.Sllz
                 }
             }
 
-            if (uncompressedSize != outputDataStream.Length)
+            if (decompressedSize != outputDataStream.Length)
             {
-                throw new FormatException("SLLZ: Wrong uncompressed data.");
+                throw new FormatException("SLLZ: Wrong decompressed data.");
             }
 
             return outputDataStream;
         }
 
-        private static DataStream UncompressV2(DataStream inputDataStream, int uncompressedSize)
+        private static DataStream DecompressV2(DataStream inputDataStream, int decompressedSize)
         {
             var reader = new DataReader(inputDataStream);
 
@@ -117,27 +127,27 @@ namespace ParLib.Sllz
             // TODO: Check if endianness is always BigEndian
             reader.Endianness = EndiannessMode.BigEndian;
 
-            int remaining = uncompressedSize;
+            int remaining = decompressedSize;
             while (remaining != 0)
             {
                 byte flag = reader.ReadByte();
                 reader.Stream.Seek(-1, SeekMode.Current);
 
                 int compressedChunkSize = (reader.ReadUInt16() << 8) | reader.ReadByte();
-                int uncompressedChunkSize = reader.ReadUInt16() + 1;
+                int decompressedChunkSize = reader.ReadUInt16() + 1;
 
                 byte[] compressedData = reader.ReadBytes(compressedChunkSize - 5);
 
                 if (flag >> 7 == 0)
                 {
-                    byte[] uncompressedData = ZlibDecompress(compressedData);
+                    byte[] decompressedData = ZlibDecompress(compressedData);
 
-                    if (uncompressedChunkSize != uncompressedData.Length)
+                    if (decompressedChunkSize != decompressedData.Length)
                     {
-                        throw new FormatException("SLLZ: Wrong uncompressed data.");
+                        throw new FormatException("SLLZ: Wrong decompressed data.");
                     }
 
-                    writer.Write(uncompressedData);
+                    writer.Write(decompressedData);
                 }
                 else
                 {
@@ -146,14 +156,14 @@ namespace ParLib.Sllz
                     throw new FormatException("SLLZ: Not ZLIB compression.");
                 }
 
-                remaining -= uncompressedChunkSize;
+                remaining -= decompressedChunkSize;
 
                 reader.Stream.Seek(5, SeekMode.Current);
             }
 
-            if (uncompressedSize != outputDataStream.Length)
+            if (decompressedSize != outputDataStream.Length)
             {
-                throw new FormatException("SLLZ: Wrong uncompressed data.");
+                throw new FormatException("SLLZ: Wrong decompressed data.");
             }
 
             return outputDataStream;
@@ -204,7 +214,8 @@ namespace ParLib.Sllz
 
             public Tuple<int, int> GetCopyInfo()
             {
-                ushort copyFlags = this.reader.ReadUInt16(); // No se si la lectura es siempre en LittleEndian
+                // TODO: check if it is always LittleEndian
+                ushort copyFlags = this.reader.ReadUInt16();
 
                 int offset = 1 + (copyFlags >> 4);
                 int size = 3 + (copyFlags & 0xF);
