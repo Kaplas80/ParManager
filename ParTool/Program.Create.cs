@@ -39,8 +39,6 @@ namespace ParTool
 
             Directory.CreateDirectory(Path.GetDirectoryName(opts.ParArchivePath));
 
-            //string name = new DirectoryInfo(opts.ParArchivePath).Name;
-
             Node node = ParLibrary.NodeFactory.FromDirectory(opts.InputDirectory, "*", ".", true);
             node.TransformWith<ParArchiveWriter>();
             node.Stream.WriteTo(opts.ParArchivePath);
