@@ -6,6 +6,7 @@ namespace ParLibrary.Converter
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
+    using System.IO;
     using System.Text;
     using Yarhl.FileFormat;
     using Yarhl.FileSystem;
@@ -89,45 +90,50 @@ namespace ParLibrary.Converter
 
             for (int i = 0; i < totalFolderCount; i++)
             {
-                var folder = new ParFolder
+                folders[i] = new Node(folderNames[i], new NodeContainerFormat())
                 {
-                    FolderCount = reader.ReadInt32(),
-                    FirstFolderIndex = reader.ReadInt32(),
-                    FileCount = reader.ReadInt32(),
-                    FirstFileIndex = reader.ReadInt32(),
-                    Unknown1 = reader.ReadInt32(),
-                    Unknown2 = reader.ReadInt32(),
-                    Unknown3 = reader.ReadInt32(),
-                    Unknown4 = reader.ReadInt32(),
+                    Tags =
+                    {
+                        ["FolderCount"] = reader.ReadInt32(),
+                        ["FirstFolderIndex"] = reader.ReadInt32(),
+                        ["FileCount"] = reader.ReadInt32(),
+                        ["FirstFileIndex"] = reader.ReadInt32(),
+                        ["Attributes"] = reader.ReadInt32(),
+                        ["Unknown2"] = reader.ReadInt32(),
+                        ["Unknown3"] = reader.ReadInt32(),
+                        ["Unknown4"] = reader.ReadInt32(),
+                    },
                 };
-
-                folders[i] = new Node(folderNames[i], folder);
             }
 
             reader.Stream.Seek(fileInfoOffset);
             var files = new Node[totalFileCount];
+            var baseDate = new DateTime(1970, 1, 1);
+
             for (int i = 0; i < totalFileCount; i++)
             {
                 uint compressionFlag = reader.ReadUInt32();
                 int size = reader.ReadInt32();
                 int compressedSize = reader.ReadInt32();
                 int offset = reader.ReadInt32();
-                int unknown1 = reader.ReadInt32();
+                int attributes = reader.ReadInt32();
                 int unknown2 = reader.ReadInt32();
                 int unknown3 = reader.ReadInt32();
                 int date = reader.ReadInt32();
 
-                var file = new ParFile(source.Stream, offset, compressedSize)
+                files[i] = new Node(fileNames[i], new BinaryFormat(source.Stream, offset, compressedSize))
                 {
-                    IsCompressed = compressionFlag == 0x80000000,
-                    DecompressedSize = size,
-                    Unknown1 = unknown1,
-                    Unknown2 = unknown2,
-                    Unknown3 = unknown3,
-                    Date = date,
+                    Tags =
+                    {
+                        ["CanBeCompressed"] = compressionFlag == 0x00000000,
+                        ["IsCompressed"] = compressionFlag == 0x80000000,
+                        ["DecompressedSize"] = size,
+                        ["Attributes"] = (FileAttributes)attributes,
+                        ["Unknown2"] = unknown2,
+                        ["Unknown3"] = unknown3,
+                        ["FileDate"] = baseDate.AddSeconds(date),
+                    },
                 };
-
-                files[i] = new Node(fileNames[i], file);
             }
 
             BuildTree(folders[0], folders, files, this.parameters.Recursive);
@@ -139,15 +145,17 @@ namespace ParLibrary.Converter
 
         private static void BuildTree(Node node, IReadOnlyList<Node> folders, IReadOnlyList<Node> files, bool recursive)
         {
-            var nodeFormat = node.GetFormatAs<ParFolder>();
-
-            for (int i = nodeFormat.FirstFolderIndex; i < nodeFormat.FirstFolderIndex + nodeFormat.FolderCount; i++)
+            int firstFolderIndex = node.Tags["FirstFolderIndex"];
+            int folderCount = node.Tags["FolderCount"];
+            for (int i = firstFolderIndex; i < firstFolderIndex + folderCount; i++)
             {
                 node.Add(folders[i]);
                 BuildTree(folders[i], folders, files, recursive);
             }
 
-            for (int i = nodeFormat.FirstFileIndex; i < nodeFormat.FirstFileIndex + nodeFormat.FileCount; i++)
+            int firstFileIndex = node.Tags["FirstFileIndex"];
+            int fileCount = node.Tags["FileCount"];
+            for (int i = firstFileIndex; i < firstFileIndex + fileCount; i++)
             {
                 if (recursive && files[i].Name.EndsWith(".PAR", StringComparison.InvariantCultureIgnoreCase))
                 {

@@ -6,6 +6,7 @@ namespace ParLibrary.Converter
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
+    using System.IO;
     using System.Text;
     using System.Threading.Tasks;
     using ParLibrary.Sllz;
@@ -16,7 +17,7 @@ namespace ParLibrary.Converter
     /// <summary>
     /// Converter from PAR to BinaryFormat.
     /// </summary>
-    public class ParArchiveWriter : IInitializer<ParArchiveWriterParameters>, IConverter<NodeContainerFormat, ParFile>
+    public class ParArchiveWriter : IInitializer<ParArchiveWriterParameters>, IConverter<NodeContainerFormat, BinaryFormat>
     {
         private ParArchiveWriterParameters parameters = new ParArchiveWriterParameters
         {
@@ -36,7 +37,7 @@ namespace ParLibrary.Converter
         /// <param name="source">The par.</param>
         /// <returns>The BinaryFormat.</returns>
         [SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "Ownserhip dispose transferred")]
-        public ParFile Convert(NodeContainerFormat source)
+        public BinaryFormat Convert(NodeContainerFormat source)
         {
             if (source == null)
             {
@@ -58,8 +59,7 @@ namespace ParLibrary.Converter
             var folders = new List<Node>();
             var files = new List<Node>();
 
-            var parFolderRoot = new ParFolder();
-            var parFolderRootNode = new Node(".", parFolderRoot);
+            var parFolderRootNode = new Node(".", new NodeContainerFormat());
             source.MoveChildrenTo(parFolderRootNode);
 
             folders.Add(parFolderRootNode);
@@ -91,10 +91,7 @@ namespace ParLibrary.Converter
             dataStream.Seek(0, SeekMode.End);
             writer.WritePadding(0, 2048);
 
-            var result = new ParFile(dataStream)
-            {
-                CanBeCompressed = false,
-            };
+            var result = new BinaryFormat(dataStream);
 
             return result;
         }
@@ -112,9 +109,15 @@ namespace ParLibrary.Converter
             while (queue.Count != 0)
             {
                 Node folder = queue.Dequeue();
-                var parFolder = folder.GetFormatAs<ParFolder>();
-                parFolder.FirstFolderIndex = folderIndex;
-                parFolder.FirstFileIndex = fileIndex;
+
+                folder.Tags["FirstFolderIndex"] = folderIndex;
+                folder.Tags["FolderCount"] = 0;
+                folder.Tags["FirstFileIndex"] = fileIndex;
+                folder.Tags["FileCount"] = 0;
+                folder.Tags["Attributes"] = 0x00000010;
+                folder.Tags["Unknown2"] = 0x00000000;
+                folder.Tags["Unknown3"] = 0x00000000;
+                folder.Tags["Unknown4"] = 0x00000000;
 
                 foreach (Node child in folder.Children)
                 {
@@ -123,25 +126,36 @@ namespace ParLibrary.Converter
                         if (child.Name.EndsWith(".PAR", StringComparison.InvariantCultureIgnoreCase))
                         {
                             child.TransformWith<ParArchiveWriter>();
+                            child.Tags["CanBeCompressed"] = false;
+                            child.Tags["IsCompressed"] = false;
+                            child.Tags["DecompressedSize"] = (int)child.Stream.Length;
+                            child.Tags["Unknown2"] = 0x00000000;
+                            child.Tags["Unknown3"] = 0x00000000;
 
                             files.Add(child);
                             fileIndex++;
-                            parFolder.FileCount++;
+                            folder.Tags["FileCount"]++;
                         }
                         else
                         {
                             folders.Add(child);
                             folderIndex++;
-                            parFolder.FolderCount++;
+                            folder.Tags["FolderCount"]++;
 
                             queue.Enqueue(child);
                         }
                     }
                     else
                     {
+                        child.Tags["CanBeCompressed"] = true;
+                        child.Tags["IsCompressed"] = false;
+                        child.Tags["DecompressedSize"] = (int)child.Stream.Length;
+                        child.Tags["Unknown2"] = 0x00000000;
+                        child.Tags["Unknown3"] = 0x00000000;
+
                         files.Add(child);
                         fileIndex++;
-                        parFolder.FileCount++;
+                        folder.Tags["FileCount"]++;
                     }
                 }
             }
@@ -157,15 +171,10 @@ namespace ParLibrary.Converter
 
             Parallel.ForEach(files, node =>
             {
-                var parFile = node.GetFormatAs<ParFile>();
-                if (parFile == null)
-                {
-                    return;
-                }
-
-                if (parFile.CanBeCompressed)
+                if (node.Tags["CanBeCompressed"])
                 {
                     node.TransformWith<Compressor, CompressorParameters>(compressorParameters);
+                    node.Tags["IsCompressed"] = true;
                 }
             });
         }
@@ -193,20 +202,26 @@ namespace ParLibrary.Converter
         {
             foreach (Node node in folders)
             {
-                var parFolder = node.GetFormatAs<ParFolder>();
-                if (parFolder == null)
+                int attributes = 0x00000010;
+                if (node.Tags.ContainsKey("DirectoryInfo"))
                 {
-                    continue;
+                    FileInfo info = node.Tags["DirectoryInfo"];
+                    attributes = (int)info.Attributes;
                 }
 
-                writer.Write(parFolder.FolderCount);
-                writer.Write(parFolder.FirstFolderIndex);
-                writer.Write(parFolder.FileCount);
-                writer.Write(parFolder.FirstFileIndex);
-                writer.Write(parFolder.Unknown1);
-                writer.Write(parFolder.Unknown2);
-                writer.Write(parFolder.Unknown3);
-                writer.Write(parFolder.Unknown4);
+                if (node.Tags.ContainsKey("Attributes"))
+                {
+                    attributes = (int)node.Tags["Attributes"];
+                }
+
+                writer.Write((int)node.Tags["FolderCount"]);
+                writer.Write((int)node.Tags["FirstFolderIndex"]);
+                writer.Write((int)node.Tags["FileCount"]);
+                writer.Write((int)node.Tags["FirstFileIndex"]);
+                writer.Write(attributes);
+                writer.Write((int)node.Tags["Unknown2"]);
+                writer.Write((int)node.Tags["Unknown3"]);
+                writer.Write((int)node.Tags["Unknown4"]);
             }
         }
 
@@ -216,42 +231,59 @@ namespace ParLibrary.Converter
 
             foreach (Node node in files)
             {
-                var parFile = node.GetFormatAs<ParFile>();
-                if (parFile == null)
+                if (node.Stream.Length > 2048)
                 {
-                    continue;
-                }
-
-                if (parFile.Stream.Length > 2048)
-                {
-                    blockSize = 2048 + (-parFile.Stream.Length % 2048);
+                    blockSize = 2048 + (-node.Stream.Length % 2048);
                     dataPosition = Align(dataPosition, 2048);
                 }
                 else
                 {
-                    if (parFile.Stream.Length < blockSize)
+                    if (node.Stream.Length < blockSize)
                     {
-                        blockSize -= parFile.Stream.Length;
+                        blockSize -= node.Stream.Length;
                     }
                     else
                     {
-                        blockSize = 2048 + (-parFile.Stream.Length % 2048);
+                        blockSize = 2048 + (-node.Stream.Length % 2048);
                         dataPosition = Align(dataPosition, 2048);
                     }
                 }
 
-                writer.Write(parFile.IsCompressed ? 0x80000000 : 0x00000000);
-                writer.Write(parFile.DecompressedSize);
-                writer.Write((int)parFile.Stream.Length);
+                int attributes = 0x00000020;
+                DateTime date = DateTime.Now;
+
+                if (node.Tags.ContainsKey("FileInfo"))
+                {
+                    FileInfo info = node.Tags["FileInfo"];
+                    attributes = (int)info.Attributes;
+                    date = info.LastWriteTime;
+                }
+
+                if (node.Tags.ContainsKey("Attributes"))
+                {
+                    attributes = (int)node.Tags["Attributes"];
+                }
+
+                if (node.Tags.ContainsKey("FileDate"))
+                {
+                    date = node.Tags["FileDate"];
+                }
+
+                var baseDate = new DateTime(1970, 1, 1);
+                int seconds = (int)(date - baseDate).TotalSeconds;
+
+                writer.Write(node.Tags["IsCompressed"] ? 0x80000000 : 0x00000000);
+                writer.Write((int)node.Tags["DecompressedSize"]);
+                writer.Write((int)node.Stream.Length);
                 writer.Write((int)dataPosition);
-                writer.Write(parFile.Unknown1);
-                writer.Write(parFile.Unknown2);
-                writer.Write(parFile.Unknown3);
-                writer.Write(parFile.Date);
+                writer.Write(attributes);
+                writer.Write((int)node.Tags["Unknown2"]);
+                writer.Write((int)node.Tags["Unknown3"]);
+                writer.Write(seconds);
 
                 writer.Stream.PushToPosition(0, SeekMode.End);
                 writer.WriteUntilLength(0, dataPosition);
-                parFile.Stream.WriteTo(writer.Stream);
+                node.Stream.WriteTo(writer.Stream);
                 dataPosition = writer.Stream.Position;
                 writer.Stream.PopPosition();
             }

@@ -5,9 +5,9 @@ namespace ParTool
 {
     using System;
     using System.IO;
-    using ParLibrary;
     using ParLibrary.Converter;
     using Yarhl.FileSystem;
+    using Yarhl.IO;
 
     /// <summary>
     /// List contents functionality.
@@ -29,15 +29,15 @@ namespace ParTool
                 Recursive = opts.Recursive,
             };
 
-            using Node par = ParLibrary.NodeFactory.FromFile(opts.ParArchivePath);
+            using Node par = NodeFactory.FromFile(opts.ParArchivePath);
             par.TransformWith<ParArchiveReader, ParArchiveReaderParameters>(parameters);
 
             foreach (Node node in Navigator.IterateNodes(par))
             {
-                var file = node.GetFormatAs<ParFile>();
+                var file = node.GetFormatAs<BinaryFormat>();
                 if (file != null)
                 {
-                    Console.WriteLine($"{node.Path}\t{file.DecompressedSize} bytes\t{file.FileDate:G}");
+                    Console.WriteLine($"{node.Path}\t{node.Tags["DecompressedSize"]} bytes\t{node.Tags["FileDate"]:G}");
                 }
             }
         }

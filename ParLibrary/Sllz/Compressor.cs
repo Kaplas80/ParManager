@@ -14,7 +14,7 @@ namespace ParLibrary.Sllz
     /// <summary>
     /// Manages SLLZ compression used in Yakuza games.
     /// </summary>
-    public class Compressor : IConverter<ParFile, ParFile>, IInitializer<CompressorParameters>
+    public class Compressor : IConverter<BinaryFormat, BinaryFormat>, IInitializer<CompressorParameters>
     {
         private const int SearchSize = 4096;
         private const int MaxLength = 18;
@@ -33,7 +33,7 @@ namespace ParLibrary.Sllz
         /// <summary>Compresses a file with SLLZ.</summary>
         /// <returns>The compressed file.</returns>
         /// <param name="source">Source file to compress.</param>
-        public ParFile Convert(ParFile source)
+        public BinaryFormat Convert(BinaryFormat source)
         {
             if (source == null)
             {
@@ -44,15 +44,7 @@ namespace ParLibrary.Sllz
 
             DataStream outputDataStream = Compress(source.Stream, this.compressorParameters);
 
-            var result = new ParFile(outputDataStream)
-            {
-                IsCompressed = true,
-                DecompressedSize = source.DecompressedSize,
-                Unknown1 = source.Unknown1,
-                Unknown2 = source.Unknown2,
-                Unknown3 = source.Unknown3,
-                Date = source.Date,
-            };
+            var result = new BinaryFormat(outputDataStream);
 
             return result;
         }

@@ -8,6 +8,7 @@ namespace ParTool
     using ParLibrary;
     using ParLibrary.Converter;
     using Yarhl.FileSystem;
+    using Yarhl.IO;
 
     /// <summary>
     /// Extract contents functionality.
@@ -43,7 +44,7 @@ namespace ParTool
                 Recursive = opts.Recursive,
             };
 
-            using Node par = ParLibrary.NodeFactory.FromFile(opts.ParArchivePath);
+            using Node par = NodeFactory.FromFile(opts.ParArchivePath);
             par.TransformWith<ParArchiveReader, ParArchiveReaderParameters>(parameters);
 
             var extractionNode = new Node(".", par.Format);
@@ -54,7 +55,7 @@ namespace ParTool
         {
             foreach (Node node in Navigator.IterateNodes(parNode))
             {
-                var file = node.GetFormatAs<ParFile>();
+                var file = node.GetFormatAs<BinaryFormat>();
                 if (file == null)
                 {
                     continue;
@@ -66,14 +67,15 @@ namespace ParTool
                 string outputPath = Path.Join(outputFolder, fileInfoPath);
                 Directory.CreateDirectory(Path.GetDirectoryName(outputPath));
 
-                if (file.IsCompressed)
+                if (node.Tags["IsCompressed"])
                 {
                     node.TransformWith<ParLibrary.Sllz.Decompressor>();
                 }
 
                 node.Stream.WriteTo(outputPath);
-                File.SetCreationTime(outputPath, file.FileDate);
-                File.SetLastWriteTime(outputPath, file.FileDate);
+                File.SetAttributes(outputPath, node.Tags["Attributes"]);
+                File.SetCreationTime(outputPath, node.Tags["FileDate"]);
+                File.SetLastWriteTime(outputPath, node.Tags["FileDate"]);
 
                 Console.WriteLine("DONE!");
             }
