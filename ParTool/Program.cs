@@ -1,52 +1,29 @@
-﻿// ---------------------------------------------------------------------------------------------------------------------
-// <copyright file="Program.cs" company="Kaplas80">
-// © Kaplas80. Licensed under MIT. See LICENSE for details.
-// </copyright>
-// ---------------------------------------------------------------------------------------------------------------------
-
+﻿// -------------------------------------------------------
+// © Kaplas. Licensed under MIT. See LICENSE for details.
+// -------------------------------------------------------
 namespace ParTool
 {
     using System;
-    using System.Collections.Generic;
-    using System.IO;
     using CommandLine;
 
     /// <summary>
     /// Main program.
     /// </summary>
-    internal static class Program
+    internal static partial class Program
     {
         private static void Main(string[] args)
         {
-            CommandLine.Parser.Default.ParseArguments<ListOptions>(args)
-                .WithParsed<ListOptions>(List);
+            CommandLine.Parser.Default.ParseArguments<Options.List, Options.Extract, Options.Create>(args)
+                .WithParsed<Options.List>(List)
+                .WithParsed<Options.Extract>(Extract)
+                .WithParsed<Options.Create>(Create);
         }
 
-        private static void List(ListOptions opts)
+        private static void WriteHeader()
         {
             Console.WriteLine(CommandLine.Text.HeadingInfo.Default);
             Console.WriteLine(CommandLine.Text.CopyrightInfo.Default);
             Console.WriteLine();
-
-            if (!File.Exists(opts.ParFile))
-            {
-                Console.WriteLine($"ERROR: \"{opts.ParFile}\" not found!!!!");
-                return;
-            }
-
-            IList<ParLib.Par.FileInfo> parContents = ParLib.Api.GetParContents(opts.ParFile);
-
-            foreach (ParLib.Par.FileInfo info in parContents)
-            {
-                Console.WriteLine($"{info.Path}\t{info.Size} bytes\t{info.FileDate:G}");
-            }
-        }
-
-        [Verb("list", HelpText = "Show contents from a Yakuza PAR file.")]
-        private class ListOptions
-        {
-            [Option('i', "input", Required = true, HelpText = "Yakuza PAR file")]
-            public string ParFile { get; set; }
         }
     }
 }

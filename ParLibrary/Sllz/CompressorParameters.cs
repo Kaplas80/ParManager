@@ -1,10 +1,7 @@
-﻿// ---------------------------------------------------------------------------------------------------------------------
-// <copyright file="CompressorParameters.cs" company="Kaplas80">
-// © Kaplas80. Licensed under MIT. See LICENSE for details.
-// </copyright>
-// ---------------------------------------------------------------------------------------------------------------------
-
-namespace ParLib.Sllz
+﻿// -------------------------------------------------------
+// © Kaplas. Licensed under MIT. See LICENSE for details.
+// -------------------------------------------------------
+namespace ParLibrary.Sllz
 {
     /// <summary>
     /// Parameters for SLLZ compressor.

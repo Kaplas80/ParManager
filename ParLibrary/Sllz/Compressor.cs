@@ -1,10 +1,7 @@
-﻿// ---------------------------------------------------------------------------------------------------------------------
-// <copyright file="Compressor.cs" company="Kaplas80">
-// © Kaplas80. Licensed under MIT. See LICENSE for details.
-// </copyright>
-// ---------------------------------------------------------------------------------------------------------------------
-
-namespace ParLib.Sllz
+﻿// -------------------------------------------------------
+// © Kaplas. Licensed under MIT. See LICENSE for details.
+// -------------------------------------------------------
+namespace ParLibrary.Sllz
 {
     using System;
     using System.Collections.Generic;
@@ -17,7 +14,7 @@ namespace ParLib.Sllz
     /// <summary>
     /// Manages SLLZ compression used in Yakuza games.
     /// </summary>
-    public class Compressor : IConverter<BinaryFormat, BinaryFormat>, IInitializer<CompressorParameters>
+    public class Compressor : IConverter<ParFile, ParFile>, IInitializer<CompressorParameters>
     {
         private const int SearchSize = 4096;
         private const int MaxLength = 18;
@@ -33,19 +30,31 @@ namespace ParLib.Sllz
             this.compressorParameters = parameters;
         }
 
-        /// <summary>Compresses a SLLZ format.</summary>
-        /// <returns>The compressed format.</returns>
-        /// <param name="source">Source format to convert.</param>
-        public BinaryFormat Convert(BinaryFormat source)
+        /// <summary>Compresses a file with SLLZ.</summary>
+        /// <returns>The compressed file.</returns>
+        /// <param name="source">Source file to compress.</param>
+        public ParFile Convert(ParFile source)
         {
             if (source == null)
             {
                 throw new ArgumentNullException(nameof(source));
             }
 
+            source.Stream.Seek(0, SeekMode.Start);
+
             DataStream outputDataStream = Compress(source.Stream, this.compressorParameters);
 
-            return new BinaryFormat(outputDataStream);
+            var result = new ParFile(outputDataStream)
+            {
+                IsCompressed = true,
+                DecompressedSize = source.DecompressedSize,
+                Attributes = source.Attributes,
+                Unknown2 = source.Unknown2,
+                Unknown3 = source.Unknown3,
+                Date = source.Date,
+            };
+
+            return result;
         }
 
         private static DataStream Compress(DataStream inputDataStream, CompressorParameters parameters)
@@ -191,21 +200,21 @@ namespace ParLib.Sllz
 
             while (currentPosition < input.Length)
             {
-                int uncompressedChunkSize = Math.Min(input.Length - currentPosition, 0x10000);
-                var uncompressedData = new byte[uncompressedChunkSize];
-                Array.Copy(input, currentPosition, uncompressedData, 0, uncompressedChunkSize);
+                int decompressedChunkSize = Math.Min(input.Length - currentPosition, 0x10000);
+                var decompressedData = new byte[decompressedChunkSize];
+                Array.Copy(input, currentPosition, decompressedData, 0, decompressedChunkSize);
 
-                byte[] compressedData = ZlibCompress(uncompressedData);
+                byte[] compressedData = ZlibCompress(decompressedData);
 
                 int compressedDataLength = compressedData.Length + 5;
                 writer.Write((byte)(compressedDataLength >> 16));
                 writer.Write((byte)(compressedDataLength >> 8));
                 writer.Write((byte)compressedDataLength);
-                writer.Write((ushort)(uncompressedChunkSize - 1));
+                writer.Write((ushort)(decompressedChunkSize - 1));
                 writer.Write(compressedData);
                 writer.WriteTimes(0, 5);
 
-                currentPosition += uncompressedChunkSize;
+                currentPosition += decompressedChunkSize;
             }
 
             return outputDataStream;
@@ -254,16 +263,17 @@ namespace ParLib.Sllz
             return length;
         }
 
-        private static byte[] ZlibCompress(byte[] uncompressedData)
+        private static byte[] ZlibCompress(byte[] decompressedData)
         {
-            using var inputMemoryStream = new MemoryStream(uncompressedData);
-            using var outputMemoryStream = new MemoryStream();
-            using var zlibStream = new ZlibStream(outputMemoryStream, CompressionMode.Compress, CompressionLevel.BestCompression);
+            using (var inputMemoryStream = new MemoryStream(decompressedData))
+            using (var outputMemoryStream = new MemoryStream())
+            using (var zlibStream = new ZlibStream(outputMemoryStream, CompressionMode.Compress, CompressionLevel.BestCompression))
+            {
+                inputMemoryStream.CopyTo(zlibStream);
+                zlibStream.Close();
 
-            inputMemoryStream.CopyTo(zlibStream);
-            zlibStream.Close();
-
-            return outputMemoryStream.ToArray();
+                return outputMemoryStream.ToArray();
+            }
         }
     }
 }
