@@ -121,7 +121,7 @@ namespace ParLibrary.Converter
 
                 var file = new ParFile(source.Stream, offset, compressedSize)
                 {
-                    CanBeCompressed = compressionFlag == 0x00000000,
+                    CanBeCompressed = false, // Don't try to compress if the original was not compressed.
                     IsCompressed = compressionFlag == 0x80000000,
                     DecompressedSize = size,
                     Attributes = attributes,
