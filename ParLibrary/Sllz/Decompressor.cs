@@ -29,6 +29,7 @@ namespace ParLibrary.Sllz
 
             var result = new ParFile(outputDataStream)
             {
+                CanBeCompressed = true,
                 IsCompressed = false,
                 DecompressedSize = source.DecompressedSize,
                 Attributes = source.Attributes,

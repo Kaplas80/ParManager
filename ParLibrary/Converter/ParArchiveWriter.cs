@@ -87,7 +87,7 @@ namespace ParLibrary.Converter
 
             folders.Add(parFolderRootNode);
 
-            GetFoldersAndFiles(source.Root, folders, files);
+            GetFoldersAndFiles(source.Root, folders, files, this.parameters);
             CompressFiles(files, this.parameters.CompressorVersion);
 
             int headerSize = 32 + (64 * folders.Count) + (64 * files.Count);
@@ -123,7 +123,7 @@ namespace ParLibrary.Converter
         }
 
         [SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "Ownserhip dispose transferred")]
-        private static void GetFoldersAndFiles(Node root, ICollection<Node> folders, ICollection<Node> files)
+        private static void GetFoldersAndFiles(Node root, ICollection<Node> folders, ICollection<Node> files, ParArchiveWriterParameters parameters)
         {
             int folderIndex = 1;
             int fileIndex = 0;
@@ -152,7 +152,7 @@ namespace ParLibrary.Converter
                         if (child.Name.EndsWith(".PAR", StringComparison.InvariantCultureIgnoreCase))
                         {
                             NestedParCreating?.Invoke(child);
-                            child.TransformWith<ParArchiveWriter>();
+                            child.TransformWith<ParArchiveWriter, ParArchiveWriterParameters>(parameters);
                             NestedParCreated?.Invoke(child);
 
                             files.Add(child);
@@ -170,7 +170,11 @@ namespace ParLibrary.Converter
                     }
                     else
                     {
-                        child.TransformWith<ParFile>();
+                        if (!(child.Format is ParFile))
+                        {
+                            child.TransformWith<ParFile>();
+                        }
+
                         files.Add(child);
                         fileIndex++;
                         folder.Tags["FileCount"]++;

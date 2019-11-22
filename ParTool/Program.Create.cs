@@ -37,7 +37,10 @@ namespace ParTool
                 File.Delete(opts.ParArchivePath);
             }
 
-            Directory.CreateDirectory(Path.GetDirectoryName(opts.ParArchivePath));
+            var parameters = new ParArchiveWriterParameters
+            {
+                CompressorVersion = opts.Compression,
+            };
 
             Console.Write("Reading input directory... ");
             Node node = NodeFactory.FromDirectory(opts.InputDirectory, "*", ".", true);
@@ -48,7 +51,9 @@ namespace ParTool
             ParArchiveWriter.FileCompressing += sender => Console.WriteLine($"Compressing {sender.Name}... ");
 
             Console.WriteLine("Creating PAR (this may take a while)... ");
-            node.TransformWith<ParArchiveWriter>();
+            node.TransformWith<ParArchiveWriter, ParArchiveWriterParameters>(parameters);
+
+            Directory.CreateDirectory(Path.GetDirectoryName(opts.ParArchivePath));
             node.Stream.WriteTo(opts.ParArchivePath);
             Console.WriteLine("DONE!");
         }
