@@ -9,8 +9,8 @@ namespace ParTool.Options
     /// PAR archive extract options.
     /// </summary>
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Class is passed as type parameter.")]
-    [Verb("remove", HelpText = "Removes files or folders from Yakuza PAR archive.")]
-    internal class Remove
+    [Verb("add", HelpText = "Add (or replace) files in Yakuza PAR archive.")]
+    internal class Add
     {
         /// <summary>
         /// Gets or sets the input directory.
@@ -19,15 +19,21 @@ namespace ParTool.Options
         public string InputParArchivePath { get; set; }
 
         /// <summary>
-        /// Gets or sets the files to remove.
+        /// Gets or sets the path where the new files are located.
         /// </summary>
-        [Value(1, MetaName = "path", Required = true, HelpText = "File or folder to remove.")]
-        public string RemovePath { get; set; }
+        [Value(1, MetaName = "path", Required = true, HelpText = "Folder to add.")]
+        public string AddDirectory { get; set; }
 
         /// <summary>
         /// Gets or sets the PAR archive path.
         /// </summary>
         [Value(2, MetaName = "output", Required = true, HelpText = "New Yakuza PAR archive path.")]
         public string OutputParArchivePath { get; set; }
+
+        /// <summary>
+        /// Gets or sets the compression algorithm to use.
+        /// </summary>
+        [Option('c', "compression", Default = 0x01, HelpText = "SLLZ algorithm.")]
+        public int Compression { get; set; }
     }
 }

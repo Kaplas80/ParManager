@@ -25,6 +25,12 @@ namespace ParTool.Options
         public string ParArchivePath { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether the output file will be used in a PS3 game.
+        /// </summary>
+        [Option("ps3", Default = false, HelpText = "Use it if the PAR is for a PS3 game.")]
+        public bool Ps3Mode { get; set; }
+
+        /// <summary>
         /// Gets or sets the compression algorithm to use.
         /// </summary>
         [Option('c', "compression", Default = 0x01, HelpText = "SLLZ algorithm.")]

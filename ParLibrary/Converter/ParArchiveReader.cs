@@ -39,6 +39,8 @@ namespace ParLibrary.Converter
                 throw new ArgumentNullException(nameof(source));
             }
 
+            source.Stream.Position = 0;
+
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
             var reader = new DataReader(source.Stream)
@@ -130,33 +132,37 @@ namespace ParLibrary.Converter
                     Date = date,
                 };
 
-                files[i] = new Node(fileNames[i], file);
+                files[i] = new Node(fileNames[i], file)
+                {
+                    Tags = { ["Date"] = date, },
+                };
             }
 
-            BuildTree(folders[0], folders, files, this.parameters.Recursive);
+            BuildTree(folders[0], folders, files, this.parameters);
 
             var result = new NodeContainerFormat();
-            result.Root.Add(folders[0].Children);
+            result.Root.Add(folders[0]);
+
             return result;
         }
 
-        private static void BuildTree(Node node, IReadOnlyList<Node> folders, IReadOnlyList<Node> files, bool recursive)
+        private static void BuildTree(Node node, IReadOnlyList<Node> folders, IReadOnlyList<Node> files, ParArchiveReaderParameters parameters)
         {
             int firstFolderIndex = node.Tags["FirstFolderIndex"];
             int folderCount = node.Tags["FolderCount"];
             for (int i = firstFolderIndex; i < firstFolderIndex + folderCount; i++)
             {
                 node.Add(folders[i]);
-                BuildTree(folders[i], folders, files, recursive);
+                BuildTree(folders[i], folders, files, parameters);
             }
 
             int firstFileIndex = node.Tags["FirstFileIndex"];
             int fileCount = node.Tags["FileCount"];
             for (int i = firstFileIndex; i < firstFileIndex + fileCount; i++)
             {
-                if (recursive && files[i].Name.EndsWith(".PAR", StringComparison.InvariantCultureIgnoreCase))
+                if (parameters.Recursive && files[i].Name.EndsWith(".par", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    files[i].TransformWith<ParArchiveReader>();
+                    files[i].TransformWith<ParArchiveReader, ParArchiveReaderParameters>(parameters);
                 }
 
                 node.Add(files[i]);

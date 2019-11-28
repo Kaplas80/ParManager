@@ -40,10 +40,17 @@ namespace ParTool
             var parameters = new ParArchiveWriterParameters
             {
                 CompressorVersion = opts.Compression,
+                OutputPath = Path.GetFullPath(opts.ParArchivePath),
+                IncludeDots = !opts.Ps3Mode,
             };
 
             Console.Write("Reading input directory... ");
-            Node node = NodeFactory.FromDirectory(opts.InputDirectory, "*", ".", true);
+            string nodeName = new DirectoryInfo(opts.InputDirectory).Name;
+            Node node = NodeFactory.FromDirectory(opts.InputDirectory, "*", nodeName, true);
+
+#pragma warning disable CA1308 // Normalize strings to uppercase
+            node.SortChildren((x, y) => string.CompareOrdinal(x.Name.ToLowerInvariant(), y.Name.ToLowerInvariant()));
+#pragma warning restore CA1308 // Normalize strings to uppercase
             Console.WriteLine("DONE!");
 
             ParArchiveWriter.NestedParCreating += sender => Console.WriteLine($"Creating nested PAR {sender.Name}... ");
@@ -51,10 +58,9 @@ namespace ParTool
             ParArchiveWriter.FileCompressing += sender => Console.WriteLine($"Compressing {sender.Name}... ");
 
             Console.WriteLine("Creating PAR (this may take a while)... ");
+            Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(opts.ParArchivePath)));
             node.TransformWith<ParArchiveWriter, ParArchiveWriterParameters>(parameters);
-
-            Directory.CreateDirectory(Path.GetDirectoryName(opts.ParArchivePath));
-            node.Stream.WriteTo(opts.ParArchivePath);
+            node.Dispose();
             Console.WriteLine("DONE!");
         }
     }
