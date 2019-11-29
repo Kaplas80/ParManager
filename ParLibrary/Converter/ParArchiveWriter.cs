@@ -100,9 +100,33 @@ namespace ParLibrary.Converter
             dataPosition = Align(dataPosition, 2048);
 
             writer.Write("PARC", 4, false);
-            writer.Write(0x02010000);
-            writer.Write(0x00020001);
-            writer.Write(0x00000000);
+            if (source.Root.Tags.ContainsKey("Unknown#1"))
+            {
+                writer.Write((int)source.Root.Tags["Unknown#1"]);
+            }
+            else
+            {
+                writer.Write(0x02010000);
+            }
+
+            if (source.Root.Tags.ContainsKey("Unknown#2"))
+            {
+                writer.Write((int)source.Root.Tags["Unknown#2"]);
+            }
+            else
+            {
+                writer.Write(0x00020001);
+            }
+
+            if (source.Root.Tags.ContainsKey("Unknown#3"))
+            {
+                writer.Write((int)source.Root.Tags["Unknown#3"]);
+            }
+            else
+            {
+                writer.Write(0x00000000);
+            }
+
             writer.Write(folders.Count);
             writer.Write(folderTableOffset);
             writer.Write(files.Count);

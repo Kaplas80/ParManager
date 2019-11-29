@@ -41,6 +41,8 @@ namespace ParLibrary.Converter
 
             source.Stream.Position = 0;
 
+            var result = new NodeContainerFormat();
+
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
             var reader = new DataReader(source.Stream)
@@ -49,25 +51,32 @@ namespace ParLibrary.Converter
                 Endianness = EndiannessMode.BigEndian,
             };
 
-            if (reader.ReadString(4) != "PARC")
+            string magicId = reader.ReadString(4);
+
+            if (magicId == "SLLZ")
+            {
+                var subStream = new DataStream(source.Stream, 0, source.Stream.Length);
+                var compressed = new ParFile(subStream);
+                source = (ParFile)ConvertFormat.With<Sllz.Decompressor>(compressed);
+                source.Stream.Position = 0;
+
+                reader = new DataReader(source.Stream)
+                {
+                    DefaultEncoding = Encoding.GetEncoding(1252),
+                    Endianness = EndiannessMode.BigEndian,
+                };
+
+                magicId = reader.ReadString(4);
+            }
+
+            if (magicId != "PARC")
             {
                 throw new FormatException("PARC: Bad magic Id.");
             }
 
-            if (reader.ReadInt32() != 0x02010000)
-            {
-                throw new FormatException("PARC: Bad unknown value #1.");
-            }
-
-            if (reader.ReadInt32() != 0x00020001)
-            {
-                throw new FormatException("PARC: Bad unknown value #2.");
-            }
-
-            if (reader.ReadInt32() != 0x00000000)
-            {
-                throw new FormatException("PARC: Bad unknown value #3.");
-            }
+            result.Root.Tags["Unknown#1"] = reader.ReadInt32();
+            result.Root.Tags["Unknown#2"] = reader.ReadInt32();
+            result.Root.Tags["Unknown#3"] = reader.ReadInt32();
 
             int totalFolderCount = reader.ReadInt32();
             int folderInfoOffset = reader.ReadInt32();
@@ -140,7 +149,6 @@ namespace ParLibrary.Converter
 
             BuildTree(folders[0], folders, files, this.parameters);
 
-            var result = new NodeContainerFormat();
             result.Root.Add(folders[0]);
 
             return result;

@@ -25,6 +25,8 @@ namespace ParLibrary.Sllz
                 throw new ArgumentNullException(nameof(source));
             }
 
+            source.Stream.Position = 0;
+
             DataStream outputDataStream = Decompress(source.Stream);
 
             var result = new ParFile(outputDataStream)
