@@ -25,10 +25,10 @@ namespace ParTool.Options
         public string ParArchivePath { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether the output file will be used in a PS3 game.
+        /// Gets or sets a value indicating whether the output file will be used in a Yakuza Kenzan, Yakuza 3, 4 or 5.
         /// </summary>
-        [Option("ps3", Default = false, HelpText = "Use it if the PAR is for a PS3 game.")]
-        public bool Ps3Mode { get; set; }
+        [Option("alternative-mode", Default = false, HelpText = "Enable it if the PAR is for Yakuza 3, 4, 5 or Kenzan.")]
+        public bool AlternativeMode { get; set; }
 
         /// <summary>
         /// Gets or sets the compression algorithm to use.

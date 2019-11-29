@@ -41,7 +41,7 @@ namespace ParTool
             {
                 CompressorVersion = opts.Compression,
                 OutputPath = Path.GetFullPath(opts.ParArchivePath),
-                IncludeDots = !opts.Ps3Mode,
+                IncludeDots = !opts.AlternativeMode,
             };
 
             Console.Write("Reading input directory... ");
