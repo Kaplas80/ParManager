@@ -115,21 +115,22 @@ namespace ParLibrary.Sllz
         private static DataStream CompressV1(DataStream inputDataStream)
         {
             // It's easier to implement working with a byte array.
-            var input = new byte[inputDataStream.Length];
-            inputDataStream.Read(input, 0, input.Length);
+            var inputData = new byte[inputDataStream.Length];
+            var outputData = new byte[inputData.Length * 2];
+            inputDataStream.Read(inputData, 0, inputData.Length);
 
-            DataStream outputDataStream = DataStreamFactory.FromMemory();
-            var writer = new DataWriter(outputDataStream);
-
-            int currentPosition = 0;
+            int inputPosition = 0;
+            int outputPosition = 0;
             byte currentFlag = 0x00;
             int bitCount = 0;
-            long flagPosition = outputDataStream.Position;
-            writer.Write((byte)0x00);
+            long flagPosition = outputPosition;
 
-            while (currentPosition < input.Length)
+            outputData[flagPosition] = 0x00;
+            outputPosition++;
+
+            while (inputPosition < inputData.Length)
             {
-                Tuple<int, int> match = FindMatch(input, currentPosition);
+                Tuple<int, int> match = FindMatch(inputData, inputPosition);
 
                 if (match == null)
                 {
@@ -138,18 +139,18 @@ namespace ParLibrary.Sllz
 
                     if (bitCount == 0x08)
                     {
-                        outputDataStream.PushToPosition(flagPosition);
-                        writer.Write(currentFlag);
-                        outputDataStream.PopPosition();
+                        outputData[flagPosition] = currentFlag;
 
                         currentFlag = 0x00;
                         bitCount = 0x00;
-                        flagPosition = outputDataStream.Position;
-                        writer.Write((byte)0x00);
+                        flagPosition = outputPosition;
+                        outputData[flagPosition] = 0x00;
+                        outputPosition++;
                     }
 
-                    writer.Write(input[currentPosition]);
-                    currentPosition++;
+                    outputData[outputPosition] = inputData[inputPosition];
+                    inputPosition++;
+                    outputPosition++;
                 }
                 else
                 {
@@ -158,14 +159,13 @@ namespace ParLibrary.Sllz
 
                     if (bitCount == 0x08)
                     {
-                        outputDataStream.PushToPosition(flagPosition);
-                        writer.Write(currentFlag);
-                        outputDataStream.PopPosition();
+                        outputData[flagPosition] = currentFlag;
 
                         currentFlag = 0x00;
                         bitCount = 0x00;
-                        flagPosition = outputDataStream.Position;
-                        writer.Write((byte)0x00);
+                        flagPosition = outputPosition;
+                        outputData[flagPosition] = 0x00;
+                        outputPosition++;
                     }
 
                     short offset = (short)((match.Item1 - 1) << 4);
@@ -173,16 +173,18 @@ namespace ParLibrary.Sllz
 
                     short tuple = (short)(offset | size);
 
-                    writer.Write(tuple);
+                    outputData[outputPosition] = (byte)tuple;
+                    outputPosition++;
+                    outputData[outputPosition] = (byte)(tuple >> 8);
+                    outputPosition++;
 
-                    currentPosition += match.Item2;
+                    inputPosition += match.Item2;
                 }
             }
 
-            outputDataStream.PushToPosition(flagPosition);
-            writer.Write(currentFlag);
-            outputDataStream.PopPosition();
+            outputData[flagPosition] = currentFlag;
 
+            DataStream outputDataStream = DataStreamFactory.FromArray(outputData, 0, outputPosition);
             return outputDataStream;
         }
 
