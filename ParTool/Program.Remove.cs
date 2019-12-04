@@ -5,10 +5,8 @@ namespace ParTool
 {
     using System;
     using System.IO;
-    using ParLibrary;
     using ParLibrary.Converter;
     using Yarhl.FileSystem;
-    using Yarhl.IO;
 
     /// <summary>
     /// Node removal functionality.
@@ -75,7 +73,7 @@ namespace ParTool
 
             par.TransformWith<ParArchiveWriter>();
 
-            Directory.CreateDirectory(Path.GetDirectoryName(opts.OutputParArchivePath));
+            Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(opts.OutputParArchivePath)));
             par.Stream.WriteTo(opts.OutputParArchivePath);
             Console.WriteLine("DONE!");
         }

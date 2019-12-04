@@ -19,7 +19,7 @@ namespace ParTool.Options
         public string InputParArchivePath { get; set; }
 
         /// <summary>
-        /// Gets or sets the PAR archive path.
+        /// Gets or sets the files to remove.
         /// </summary>
         [Value(1, MetaName = "path", Required = true, HelpText = "File or folder to remove.")]
         public string RemovePath { get; set; }
