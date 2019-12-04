@@ -47,8 +47,7 @@ namespace ParTool
             using Node par = NodeFactory.FromFile(opts.ParArchivePath);
             par.TransformWith<ParArchiveReader, ParArchiveReaderParameters>(parameters);
 
-            var extractionNode = new Node(".", par.Format);
-            Extract(extractionNode, opts.OutputDirectory);
+            Extract(par, opts.OutputDirectory);
         }
 
         private static void Extract(Node parNode, string outputFolder)
@@ -63,7 +62,7 @@ namespace ParTool
 
                 Console.Write($"Extracting {node.Path}... ");
 
-                string fileInfoPath = node.Path.Replace('/', Path.DirectorySeparatorChar);
+                string fileInfoPath = node.Path.Substring(parNode.Path.Length).Replace('/', Path.DirectorySeparatorChar);
                 string outputPath = Path.Join(outputFolder, fileInfoPath);
                 Directory.CreateDirectory(Path.GetDirectoryName(outputPath));
 

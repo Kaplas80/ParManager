@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.8" />
+    <PackageReference Include="StyleCop.Analyzers" Version="1.1.118" />
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="8.0.0.9566" />
+    <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="16.4.33" />
+  </ItemGroup>
+</Project>

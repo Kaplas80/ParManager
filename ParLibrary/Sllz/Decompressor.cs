@@ -25,10 +25,13 @@ namespace ParLibrary.Sllz
                 throw new ArgumentNullException(nameof(source));
             }
 
+            source.Stream.Position = 0;
+
             DataStream outputDataStream = Decompress(source.Stream);
 
             var result = new ParFile(outputDataStream)
             {
+                CanBeCompressed = true,
                 IsCompressed = false,
                 DecompressedSize = source.DecompressedSize,
                 Attributes = source.Attributes,
@@ -62,92 +65,113 @@ namespace ParLibrary.Sllz
             ushort headerSize = reader.ReadUInt16();
 
             int decompressedSize = reader.ReadInt32();
-            reader.ReadInt32(); // Compressed Size
+            int compressedSize = reader.ReadInt32();
 
             reader.Stream.Seek(headerSize, SeekMode.Start);
 
             if (version == 1)
             {
-                return DecompressV1(inputDataStream, decompressedSize);
+                return DecompressV1(inputDataStream, compressedSize, decompressedSize);
             }
 
             if (version == 2)
             {
-                return DecompressV2(inputDataStream, decompressedSize);
+                return DecompressV2(inputDataStream, compressedSize, decompressedSize);
             }
 
             throw new FormatException($"SLLZ: Unknown compression version {version}.");
         }
 
-        private static DataStream DecompressV1(DataStream inputDataStream, int decompressedSize)
+        private static DataStream DecompressV1(DataStream inputDataStream, int compressedSize, int decompressedSize)
         {
-            var reader = new DataReader(inputDataStream);
+            var inputData = new byte[compressedSize];
+            var outputData = new byte[decompressedSize];
+            inputDataStream.Read(inputData, 0, compressedSize - 0x10);
 
-            DataStream outputDataStream = DataStreamFactory.FromMemory();
-            var writer = new DataWriter(outputDataStream);
+            int inputPosition = 0;
+            int outputPosition = 0;
 
-            var flagReader = new FlagReader(inputDataStream);
+            byte flag = inputData[inputPosition];
+            inputPosition++;
+            int flagCount = 8;
 
-            while (writer.Stream.Position < decompressedSize)
+            do
             {
-                int flag = flagReader.ReadFlag();
-
-                if (flag == 0)
+                if ((flag & 0x80) == 0x80)
                 {
-                    byte data = reader.ReadByte();
-                    writer.Write(data);
+                    flag = (byte)(flag << 1);
+                    flagCount--;
+                    if (flagCount == 0)
+                    {
+                        flag = inputData[inputPosition];
+                        inputPosition++;
+                        flagCount = 8;
+                    }
+
+                    ushort copyFlags = (ushort)(inputData[inputPosition] | inputData[inputPosition + 1] << 8);
+                    inputPosition += 2;
+
+                    int copyDistance = 1 + (copyFlags >> 4);
+                    int copyCount = 3 + (copyFlags & 0xF);
+
+                    int i = 0;
+                    do
+                    {
+                        outputData[outputPosition] = outputData[outputPosition - copyDistance];
+                        outputPosition++;
+                        i++;
+                    }
+                    while (i < copyCount);
                 }
                 else
                 {
-                    (int offset, int size) = flagReader.GetCopyInfo();
+                    flag = (byte)(flag << 1);
+                    flagCount--;
+                    if (flagCount == 0)
+                    {
+                        flag = inputData[inputPosition];
+                        inputPosition++;
+                        flagCount = 8;
+                    }
 
-                    writer.Stream.PushToPosition(-offset, SeekMode.Current);
-                    var data = new byte[size];
-                    writer.Stream.Read(data, 0, size);
-                    writer.Stream.PopPosition();
-                    writer.Write(data);
+                    outputData[outputPosition] = inputData[inputPosition];
+                    inputPosition++;
+                    outputPosition++;
                 }
             }
+            while (outputPosition < decompressedSize);
 
-            if (decompressedSize != outputDataStream.Length)
-            {
-                throw new FormatException("SLLZ: Wrong decompressed data.");
-            }
-
+            DataStream outputDataStream = DataStreamFactory.FromArray(outputData, 0, decompressedSize);
             return outputDataStream;
         }
 
-        private static DataStream DecompressV2(DataStream inputDataStream, int decompressedSize)
+        private static DataStream DecompressV2(DataStream inputDataStream, int compressedSize, int decompressedSize)
         {
-            var reader = new DataReader(inputDataStream);
+            var inputData = new byte[compressedSize];
+            var outputData = new byte[decompressedSize];
+            inputDataStream.Read(inputData, 0, compressedSize - 0x10);
 
-            DataStream outputDataStream = DataStreamFactory.FromMemory();
-            var writer = new DataWriter(outputDataStream);
+            int inputPosition = 0;
+            int outputPosition = 0;
 
-            // TODO: Check if endianness is always BigEndian
-            reader.Endianness = EndiannessMode.BigEndian;
-
-            int remaining = decompressedSize;
-            while (remaining != 0)
+            while (outputPosition < decompressedSize)
             {
-                byte flag = reader.ReadByte();
-                reader.Stream.Seek(-1, SeekMode.Current);
+                int compressedChunkSize = (inputData[inputPosition] << 16) | (inputData[inputPosition + 1] << 8) | inputData[inputPosition + 2];
+                int decompressedChunkSize = ((inputData[inputPosition + 3] << 8) | inputData[inputPosition + 4]) + 1;
 
-                int compressedChunkSize = (reader.ReadUInt16() << 8) | reader.ReadByte();
-                int decompressedChunkSize = reader.ReadUInt16() + 1;
+                bool flag = (inputData[inputPosition] & 0x80) == 0x80;
 
-                byte[] compressedData = reader.ReadBytes(compressedChunkSize - 5);
-
-                if (flag >> 7 == 0)
+                if (!flag)
                 {
-                    byte[] decompressedData = ZlibDecompress(compressedData);
+                    byte[] decompressedData = ZlibDecompress(inputData, inputPosition + 5, compressedChunkSize - 5);
 
                     if (decompressedChunkSize != decompressedData.Length)
                     {
                         throw new FormatException("SLLZ: Wrong decompressed data.");
                     }
 
-                    writer.Write(decompressedData);
+                    Array.Copy(decompressedData, 0, outputData, outputPosition, decompressedData.Length);
+                    inputPosition += compressedChunkSize;
                 }
                 else
                 {
@@ -156,71 +180,22 @@ namespace ParLibrary.Sllz
                     throw new FormatException("SLLZ: Not ZLIB compression.");
                 }
 
-                remaining -= decompressedChunkSize;
-
-                reader.Stream.Seek(5, SeekMode.Current);
+                outputPosition += decompressedChunkSize;
             }
 
-            if (decompressedSize != outputDataStream.Length)
-            {
-                throw new FormatException("SLLZ: Wrong decompressed data.");
-            }
-
+            DataStream outputDataStream = DataStreamFactory.FromArray(outputData, 0, decompressedSize);
             return outputDataStream;
         }
 
-        private static byte[] ZlibDecompress(byte[] compressedData)
+        private static byte[] ZlibDecompress(byte[] compressedData, int index, int count)
         {
-            using (var inputMemoryStream = new MemoryStream(compressedData))
+            using (var inputMemoryStream = new MemoryStream(compressedData, index, count))
             using (var outputMemoryStream = new MemoryStream())
             using (var zlibStream = new ZlibStream(outputMemoryStream, CompressionMode.Decompress))
             {
                 inputMemoryStream.CopyTo(zlibStream);
 
                 return outputMemoryStream.ToArray();
-            }
-        }
-
-        private class FlagReader
-        {
-            private readonly DataReader reader;
-            private byte currentValue;
-            private byte bitCount;
-
-            public FlagReader(DataStream inputDataStream)
-            {
-                this.reader = new DataReader(inputDataStream)
-                {
-                    Endianness = EndiannessMode.LittleEndian,
-                };
-                this.currentValue = this.reader.ReadByte();
-                this.bitCount = 0x08;
-            }
-
-            public int ReadFlag()
-            {
-                int result = this.currentValue & 0x80;
-                this.bitCount--;
-                this.currentValue <<= 0x01;
-
-                if (this.bitCount == 0x00)
-                {
-                    this.currentValue = this.reader.ReadByte();
-                    this.bitCount = 0x08;
-                }
-
-                return result;
-            }
-
-            public Tuple<int, int> GetCopyInfo()
-            {
-                // TODO: check if it is always LittleEndian
-                ushort copyFlags = this.reader.ReadUInt16();
-
-                int offset = 1 + (copyFlags >> 4);
-                int size = 3 + (copyFlags & 0xF);
-
-                return new Tuple<int, int>(offset, size);
             }
         }
     }

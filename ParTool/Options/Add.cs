@@ -9,26 +9,26 @@ namespace ParTool.Options
     /// PAR archive extract options.
     /// </summary>
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Class is passed as type parameter.")]
-    [Verb("create", HelpText = "Create a Yakuza PAR archive.")]
-    internal class Create
+    [Verb("add", HelpText = "Add (or replace) files in Yakuza PAR archive.")]
+    internal class Add
     {
         /// <summary>
         /// Gets or sets the input directory.
         /// </summary>
-        [Value(0, MetaName = "input", Required = true, HelpText = "Input directory.")]
-        public string InputDirectory { get; set; }
+        [Value(0, MetaName = "input", Required = true, HelpText = "Input PAR archive path.")]
+        public string InputParArchivePath { get; set; }
+
+        /// <summary>
+        /// Gets or sets the path where the new files are located.
+        /// </summary>
+        [Value(1, MetaName = "path", Required = true, HelpText = "Folder to add.")]
+        public string AddDirectory { get; set; }
 
         /// <summary>
         /// Gets or sets the PAR archive path.
         /// </summary>
-        [Value(1, MetaName = "archive", Required = true, HelpText = "New Yakuza PAR archive path.")]
-        public string ParArchivePath { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether the output file will be used in a Yakuza Kenzan, Yakuza 3, 4 or 5.
-        /// </summary>
-        [Option("alternative-mode", Default = false, HelpText = "Enable it if the PAR is for Yakuza 3, 4, 5 or Kenzan.")]
-        public bool AlternativeMode { get; set; }
+        [Value(2, MetaName = "output", Required = true, HelpText = "New Yakuza PAR archive path.")]
+        public string OutputParArchivePath { get; set; }
 
         /// <summary>
         /// Gets or sets the compression algorithm to use.
