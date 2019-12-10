@@ -33,7 +33,7 @@ namespace ParTool
                             {
                                 ParArchivePath = args[0],
                                 OutputDirectory = string.Concat(args[0], ".unpack"),
-                                Recursive = true,
+                                Recursive = false,
                             };
 
                             Extract(opts);
