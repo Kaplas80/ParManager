@@ -55,6 +55,12 @@ It supports ***SLLZ*** compression (Including ***SLLZ V2*** used in Yakuza Kiwam
     - `1` is the default value. It is supported in all Yakuza games.
     - `2` is only supported in Yakuza Kiwami 2.
 
+- **Drag & Drop**
+  
+  Since v1.2.0, you can drag & drop a file or a folder on the exe. 
+  If you drop a PAR archive, the application will extract it in the same location of the archive.
+  If you drop a folder, the application will create a PAR archive with `-c 1` parameter.
+
 # Credits
 * Thanks to Pleonex for [Yarhl](https://scenegate.github.io/Yarhl/).
 * Thanks to Rick Gibbed for the SLLZ decompression algorithm.
