@@ -72,9 +72,9 @@ namespace ParTool
                 }
 
                 node.Stream.WriteTo(outputPath);
-                File.SetAttributes(outputPath, (FileAttributes)file.Attributes);
                 File.SetCreationTime(outputPath, file.FileDate);
                 File.SetLastWriteTime(outputPath, file.FileDate);
+                File.SetAttributes(outputPath, (FileAttributes)file.Attributes);
 
                 Console.WriteLine("DONE!");
             }
