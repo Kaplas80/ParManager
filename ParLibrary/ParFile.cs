@@ -41,7 +41,7 @@ namespace ParLibrary
 
             this.CanBeCompressed = true;
             this.IsCompressed = false;
-            this.DecompressedSize = (int)stream.Length;
+            this.DecompressedSize = (uint)stream.Length;
             this.Attributes = 0x00000020;
             this.Unknown2 = 0x00000000;
             this.Unknown3 = 0x00000000;
@@ -59,7 +59,7 @@ namespace ParLibrary
         {
             this.CanBeCompressed = true;
             this.IsCompressed = false;
-            this.DecompressedSize = (int)length;
+            this.DecompressedSize = (uint)length;
             this.Attributes = 0x00000020;
             this.Unknown2 = 0x00000000;
             this.Unknown3 = 0x00000000;
@@ -79,7 +79,7 @@ namespace ParLibrary
         /// <summary>
         /// Gets or sets the file size (decompressed).
         /// </summary>
-        public int DecompressedSize { get; set; }
+        public uint DecompressedSize { get; set; }
 
         /// <summary>
         /// Gets or sets the file attributes.
