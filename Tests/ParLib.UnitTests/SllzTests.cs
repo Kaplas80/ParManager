@@ -5,6 +5,7 @@ namespace ParLib.UnitTests
 {
     using System.Text;
     using NUnit.Framework;
+    using ParLibrary;
     using ParLibrary.Sllz;
     using Yarhl.FileFormat;
     using Yarhl.IO;
@@ -27,7 +28,7 @@ namespace ParLib.UnitTests
             byte[] buffer = Encoding.ASCII.GetBytes(sampleText);
 
             DataStream dataStream = DataStreamFactory.FromArray(buffer, 0, buffer.Length);
-            using var binaryFormat = new BinaryFormat(dataStream);
+            using var binaryFormat = new ParFile(dataStream);
 
             var parameters = new CompressorParameters
             {
@@ -35,8 +36,8 @@ namespace ParLib.UnitTests
                 Version = compressorVersion,
             };
 
-            var compressedBinaryFormat = (BinaryFormat)ConvertFormat.With<Compressor, CompressorParameters>(parameters, binaryFormat);
-            var decompressedBinaryFormat = (BinaryFormat)ConvertFormat.With<Decompressor>(compressedBinaryFormat);
+            var compressedBinaryFormat = (ParFile)ConvertFormat.With<Compressor, CompressorParameters>(parameters, binaryFormat);
+            var decompressedBinaryFormat = (ParFile)ConvertFormat.With<Decompressor>(compressedBinaryFormat);
 
             Assert.IsTrue(compressedBinaryFormat.Stream.Length < decompressedBinaryFormat.Stream.Length);
             Assert.IsTrue(dataStream.Compare(decompressedBinaryFormat.Stream));
