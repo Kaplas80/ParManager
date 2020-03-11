@@ -341,8 +341,8 @@ namespace ParLibrary.Converter
 
                 writer.Write(parFile.IsCompressed ? 0x80000000 : 0x00000000);
                 writer.Write(parFile.DecompressedSize);
-                writer.Write((int)node.Stream.Length);
-                writer.Write((int)dataPosition);
+                writer.Write((uint)node.Stream.Length);
+                writer.Write((uint)dataPosition);
                 writer.Write(attributes);
                 writer.Write(parFile.Unknown2);
                 writer.Write(parFile.Unknown3);

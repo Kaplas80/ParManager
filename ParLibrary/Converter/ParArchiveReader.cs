@@ -122,9 +122,9 @@ namespace ParLibrary.Converter
             for (int i = 0; i < totalFileCount; i++)
             {
                 uint compressionFlag = reader.ReadUInt32();
-                int size = reader.ReadInt32();
-                int compressedSize = reader.ReadInt32();
-                int offset = reader.ReadInt32();
+                uint size = reader.ReadUInt32();
+                uint compressedSize = reader.ReadUInt32();
+                uint offset = reader.ReadUInt32();
                 int attributes = reader.ReadInt32();
                 int unknown2 = reader.ReadInt32();
                 int unknown3 = reader.ReadInt32();
