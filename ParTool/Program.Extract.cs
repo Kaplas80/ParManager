@@ -71,7 +71,16 @@ namespace ParTool
                     node.TransformWith<ParLibrary.Sllz.Decompressor>();
                 }
 
-                node.Stream.WriteTo(outputPath);
+                if (node.Stream.Length > 0)
+                {
+                    node.Stream.WriteTo(outputPath);
+                }
+                else
+                {
+                    // Create empty file
+                    File.Create(outputPath).Dispose();
+                }
+
                 File.SetCreationTime(outputPath, file.FileDate);
                 File.SetLastWriteTime(outputPath, file.FileDate);
                 File.SetAttributes(outputPath, (FileAttributes)file.Attributes);
