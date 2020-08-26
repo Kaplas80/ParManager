@@ -74,9 +74,9 @@ namespace ParLibrary.Converter
                 throw new FormatException("PARC: Bad magic Id.");
             }
 
-            result.Root.Tags["Unknown#1"] = reader.ReadInt32();
-            result.Root.Tags["Unknown#2"] = reader.ReadInt32();
-            result.Root.Tags["Unknown#3"] = reader.ReadInt32();
+            result.Root.Tags["Endianness"] = reader.ReadInt32();
+            result.Root.Tags["Version"] = reader.ReadInt32();
+            result.Root.Tags["DataSize"] = reader.ReadInt32();
 
             int totalFolderCount = reader.ReadInt32();
             int folderInfoOffset = reader.ReadInt32();
@@ -87,6 +87,10 @@ namespace ParLibrary.Converter
             for (int i = 0; i < totalFolderCount; i++)
             {
                 folderNames[i] = reader.ReadString(0x40).TrimEnd('\0');
+                if (folderNames[i].Length < 1)
+                {
+                    folderNames[i] = ".";
+                }
             }
 
             var fileNames = new string[totalFileCount];
