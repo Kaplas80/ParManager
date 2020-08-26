@@ -100,27 +100,27 @@ namespace ParLibrary.Converter
             dataPosition = Align(dataPosition, 2048);
 
             writer.Write("PARC", 4, false);
-            if (source.Root.Tags.ContainsKey("Unknown#1"))
+            if (source.Root.Tags.ContainsKey("Endianness"))
             {
-                writer.Write((int)source.Root.Tags["Unknown#1"]);
+                writer.Write((int)source.Root.Tags["Endianness"]);
             }
             else
             {
                 writer.Write(0x02010000);
             }
 
-            if (source.Root.Tags.ContainsKey("Unknown#2"))
+            if (source.Root.Tags.ContainsKey("Version"))
             {
-                writer.Write((int)source.Root.Tags["Unknown#2"]);
+                writer.Write((int)source.Root.Tags["Version"]);
             }
             else
             {
                 writer.Write(0x00020001);
             }
 
-            if (source.Root.Tags.ContainsKey("Unknown#3"))
+            if (source.Root.Tags.ContainsKey("DataSize"))
             {
-                writer.Write((int)source.Root.Tags["Unknown#3"]);
+                writer.Write((int)source.Root.Tags["DataSize"]);
             }
             else
             {
