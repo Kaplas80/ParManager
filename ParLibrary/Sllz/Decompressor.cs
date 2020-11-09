@@ -35,9 +35,7 @@ namespace ParLibrary.Sllz
                 IsCompressed = false,
                 DecompressedSize = source.DecompressedSize,
                 Attributes = source.Attributes,
-                Unknown2 = source.Unknown2,
-                Unknown3 = source.Unknown3,
-                Date = source.Date,
+                Timestamp = source.Timestamp,
             };
 
             return result;
@@ -88,12 +86,12 @@ namespace ParLibrary.Sllz
             var outputData = new byte[decompressedSize];
             inputDataStream.Read(inputData, 0, compressedSize - 0x10);
 
-            int inputPosition = 0;
-            int outputPosition = 0;
+            var inputPosition = 0;
+            var outputPosition = 0;
 
             byte flag = inputData[inputPosition];
             inputPosition++;
-            int flagCount = 8;
+            var flagCount = 8;
 
             do
             {
@@ -108,13 +106,13 @@ namespace ParLibrary.Sllz
                         flagCount = 8;
                     }
 
-                    ushort copyFlags = (ushort)(inputData[inputPosition] | inputData[inputPosition + 1] << 8);
+                    var copyFlags = (ushort)(inputData[inputPosition] | inputData[inputPosition + 1] << 8);
                     inputPosition += 2;
 
                     int copyDistance = 1 + (copyFlags >> 4);
                     int copyCount = 3 + (copyFlags & 0xF);
 
-                    int i = 0;
+                    var i = 0;
                     do
                     {
                         outputData[outputPosition] = outputData[outputPosition - copyDistance];
@@ -151,8 +149,8 @@ namespace ParLibrary.Sllz
             var outputData = new byte[decompressedSize];
             inputDataStream.Read(inputData, 0, compressedSize - 0x10);
 
-            int inputPosition = 0;
-            int outputPosition = 0;
+            var inputPosition = 0;
+            var outputPosition = 0;
 
             while (outputPosition < decompressedSize)
             {

@@ -57,11 +57,16 @@ namespace ParTool
             ParArchiveWriter.NestedParCreated += sender => Console.WriteLine($"{sender.Name} created!");
             ParArchiveWriter.FileCompressing += sender => Console.WriteLine($"Compressing {sender.Name}... ");
 
+            DateTime startTime = DateTime.Now;
             Console.WriteLine("Creating PAR (this may take a while)... ");
             Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(opts.ParArchivePath)));
             node.TransformWith<ParArchiveWriter, ParArchiveWriterParameters>(parameters);
             node.Dispose();
+
+            DateTime endTime = DateTime.Now;
             Console.WriteLine("DONE!");
+
+            Console.WriteLine($"Time elapsed: {endTime - startTime:g}");
         }
     }
 }

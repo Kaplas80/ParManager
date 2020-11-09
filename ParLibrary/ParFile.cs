@@ -22,8 +22,6 @@ namespace ParLibrary
             this.IsCompressed = false;
             this.DecompressedSize = 0;
             this.Attributes = 0x00000020;
-            this.Unknown2 = 0x00000000;
-            this.Unknown3 = 0x00000000;
             this.FileDate = DateTime.Now;
         }
 
@@ -43,8 +41,6 @@ namespace ParLibrary
             this.IsCompressed = false;
             this.DecompressedSize = (uint)stream.Length;
             this.Attributes = 0x00000020;
-            this.Unknown2 = 0x00000000;
-            this.Unknown3 = 0x00000000;
             this.FileDate = DateTime.Now;
         }
 
@@ -61,8 +57,6 @@ namespace ParLibrary
             this.IsCompressed = false;
             this.DecompressedSize = (uint)length;
             this.Attributes = 0x00000020;
-            this.Unknown2 = 0x00000000;
-            this.Unknown3 = 0x00000000;
             this.FileDate = DateTime.Now;
         }
 
@@ -87,19 +81,9 @@ namespace ParLibrary
         public int Attributes { get; set; }
 
         /// <summary>
-        /// Gets or sets the file "unknown" value #2.
+        /// Gets or sets the file date (as ulong).
         /// </summary>
-        public int Unknown2 { get; set; }
-
-        /// <summary>
-        /// Gets or sets the file "unknown" value #3.
-        /// </summary>
-        public int Unknown3 { get; set; }
-
-        /// <summary>
-        /// Gets or sets the file date (as integer).
-        /// </summary>
-        public int Date { get; set; }
+        public ulong Timestamp { get; set; }
 
         /// <summary>
         /// Gets or sets the file date (as DateTime).
@@ -109,13 +93,13 @@ namespace ParLibrary
             get
             {
                 var baseDate = new DateTime(1970, 1, 1);
-                return baseDate.AddSeconds(this.Date);
+                return baseDate.AddSeconds(this.Timestamp);
             }
 
             set
             {
                 var baseDate = new DateTime(1970, 1, 1);
-                this.Date = (int)(value - baseDate).TotalSeconds;
+                this.Timestamp = (ulong)(value - baseDate).TotalSeconds;
             }
         }
 
