@@ -11,8 +11,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ParLib.UnitTests", "Tests\P
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ParLibrary", "ParLibrary\ParLibrary.csproj", "{A51F85A1-3E19-4710-8261-282C50D1850F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Yarhl", "Yarhl\src\Yarhl\Yarhl.csproj", "{CDA2BD59-63A1-4353-9121-82E8CD85ED0A}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -31,10 +29,6 @@ Global
 		{A51F85A1-3E19-4710-8261-282C50D1850F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A51F85A1-3E19-4710-8261-282C50D1850F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A51F85A1-3E19-4710-8261-282C50D1850F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{CDA2BD59-63A1-4353-9121-82E8CD85ED0A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{CDA2BD59-63A1-4353-9121-82E8CD85ED0A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{CDA2BD59-63A1-4353-9121-82E8CD85ED0A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{CDA2BD59-63A1-4353-9121-82E8CD85ED0A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

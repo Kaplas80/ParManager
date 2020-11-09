@@ -74,7 +74,17 @@ namespace ParLibrary.Converter
                 throw new FormatException("PARC: Bad magic Id.");
             }
 
-            result.Root.Tags["Endianness"] = reader.ReadInt32();
+            result.Root.Tags["PlatformId"] = reader.ReadByte();
+            byte endianness = reader.ReadByte();
+            result.Root.Tags["Endianness"] = endianness;
+            result.Root.Tags["SizeExtended"] = reader.ReadByte();
+            result.Root.Tags["Relocated"] = reader.ReadByte();
+
+            if (endianness == 0x00)
+            {
+                reader.Endianness = EndiannessMode.LittleEndian;
+            }
+
             result.Root.Tags["Version"] = reader.ReadInt32();
             result.Root.Tags["DataSize"] = reader.ReadInt32();
 
@@ -84,7 +94,7 @@ namespace ParLibrary.Converter
             int fileInfoOffset = reader.ReadInt32();
 
             var folderNames = new string[totalFolderCount];
-            for (int i = 0; i < totalFolderCount; i++)
+            for (var i = 0; i < totalFolderCount; i++)
             {
                 folderNames[i] = reader.ReadString(0x40).TrimEnd('\0');
                 if (folderNames[i].Length < 1)
@@ -94,7 +104,7 @@ namespace ParLibrary.Converter
             }
 
             var fileNames = new string[totalFileCount];
-            for (int i = 0; i < totalFileCount; i++)
+            for (var i = 0; i < totalFileCount; i++)
             {
                 fileNames[i] = reader.ReadString(0x40).TrimEnd('\0');
             }
@@ -102,7 +112,7 @@ namespace ParLibrary.Converter
             reader.Stream.Seek(folderInfoOffset);
             var folders = new Node[totalFolderCount];
 
-            for (int i = 0; i < totalFolderCount; i++)
+            for (var i = 0; i < totalFolderCount; i++)
             {
                 folders[i] = new Node(folderNames[i], new NodeContainerFormat())
                 {
@@ -113,9 +123,9 @@ namespace ParLibrary.Converter
                         ["FileCount"] = reader.ReadInt32(),
                         ["FirstFileIndex"] = reader.ReadInt32(),
                         ["Attributes"] = reader.ReadInt32(),
-                        ["Unknown2"] = reader.ReadInt32(),
-                        ["Unknown3"] = reader.ReadInt32(),
-                        ["Unknown4"] = reader.ReadInt32(),
+                        ["Unused1"] = reader.ReadInt32(),
+                        ["Unused2"] = reader.ReadInt32(),
+                        ["Unused3"] = reader.ReadInt32(),
                     },
                 };
             }
@@ -123,31 +133,29 @@ namespace ParLibrary.Converter
             reader.Stream.Seek(fileInfoOffset);
             var files = new Node[totalFileCount];
 
-            for (int i = 0; i < totalFileCount; i++)
+            for (var i = 0; i < totalFileCount; i++)
             {
                 uint compressionFlag = reader.ReadUInt32();
                 uint size = reader.ReadUInt32();
                 uint compressedSize = reader.ReadUInt32();
-                uint offset = reader.ReadUInt32();
+                uint baseOffset = reader.ReadUInt32();
                 int attributes = reader.ReadInt32();
-                int unknown2 = reader.ReadInt32();
-                int unknown3 = reader.ReadInt32();
-                int date = reader.ReadInt32();
+                uint extendedOffset = reader.ReadUInt32();
+                ulong timestamp = reader.ReadUInt64();
 
+                long offset = ((long)extendedOffset << 32) | baseOffset;
                 var file = new ParFile(source.Stream, offset, compressedSize)
                 {
                     CanBeCompressed = false, // Don't try to compress if the original was not compressed.
                     IsCompressed = compressionFlag == 0x80000000,
                     DecompressedSize = size,
                     Attributes = attributes,
-                    Unknown2 = unknown2,
-                    Unknown3 = unknown3,
-                    Date = date,
+                    Timestamp = timestamp,
                 };
 
                 files[i] = new Node(fileNames[i], file)
                 {
-                    Tags = { ["Date"] = date, },
+                    Tags = { ["Timestamp"] = timestamp, },
                 };
             }
 

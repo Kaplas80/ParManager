@@ -4,7 +4,6 @@
 namespace ParLibrary.Sllz
 {
     using System;
-    using System.Collections.Generic;
     using System.IO;
     using System.Text;
     using Ionic.Zlib;
@@ -16,8 +15,8 @@ namespace ParLibrary.Sllz
     /// </summary>
     public class Compressor : IConverter<ParFile, ParFile>, IInitializer<CompressorParameters>
     {
-        private const int SearchSize = 4096;
-        private const int MaxLength = 18;
+        private const int MAX_WINDOW_SIZE = 4096;
+        private const int MAX_ENCODED_LENGTH = 18;
 
         private CompressorParameters compressorParameters;
 
@@ -50,9 +49,7 @@ namespace ParLibrary.Sllz
                 IsCompressed = true,
                 DecompressedSize = source.DecompressedSize,
                 Attributes = source.Attributes,
-                Unknown2 = source.Unknown2,
-                Unknown3 = source.Unknown3,
-                Date = source.Date,
+                Timestamp = source.Timestamp,
             };
 
             return result;
@@ -75,19 +72,17 @@ namespace ParLibrary.Sllz
                 };
             }
 
-            writer.Endianness = parameters.Endianness == 0 ? EndiannessMode.LittleEndian : EndiannessMode.BigEndian;
-            writer.Write("SLLZ", false);
-            writer.Write(parameters.Endianness);
-            writer.Write(parameters.Version);
-            writer.Write((ushort)0x10); // Header size
-            writer.Write((int)inputDataStream.Length);
-            writer.Stream.PushCurrentPosition();
-            writer.Write(0x00000000); // Compressed size
-
             DataStream compressedDataStream;
             if (parameters.Version == 1)
             {
-                compressedDataStream = CompressV1(inputDataStream);
+                try
+                {
+                    compressedDataStream = CompressV1(inputDataStream);
+                }
+                catch (SllzCompressorException)
+                {
+                    compressedDataStream = inputDataStream;
+                }
             }
             else if (parameters.Version == 2)
             {
@@ -103,6 +98,19 @@ namespace ParLibrary.Sllz
                 throw new FormatException($"SLLZ: Unknown compression version {parameters.Version}.");
             }
 
+            if (compressedDataStream == inputDataStream)
+            {
+                return inputDataStream;
+            }
+
+            writer.Endianness = parameters.Endianness == 0 ? EndiannessMode.LittleEndian : EndiannessMode.BigEndian;
+            writer.Write("SLLZ", false);
+            writer.Write(parameters.Endianness);
+            writer.Write(parameters.Version);
+            writer.Write((ushort)0x10); // Header size
+            writer.Write((int)inputDataStream.Length);
+            writer.Stream.PushCurrentPosition();
+            writer.Write(0x00000000); // Compressed size
             compressedDataStream.WriteTo(outputDataStream);
             writer.Stream.PopPosition();
             writer.Write((int)(compressedDataStream.Length + 0x10)); // data + header
@@ -116,13 +124,15 @@ namespace ParLibrary.Sllz
         {
             // It's easier to implement working with a byte array.
             var inputData = new byte[inputDataStream.Length];
-            var outputData = new byte[inputData.Length * 2];
             inputDataStream.Read(inputData, 0, inputData.Length);
 
-            int inputPosition = 0;
-            int outputPosition = 0;
+            uint outputSize = (uint)inputData.Length + 2048;
+            var outputData = new byte[outputSize];
+
+            uint inputPosition = 0;
+            uint outputPosition = 0;
             byte currentFlag = 0x00;
-            int bitCount = 0;
+            var bitCount = 0;
             long flagPosition = outputPosition;
 
             outputData[flagPosition] = 0x00;
@@ -130,7 +140,10 @@ namespace ParLibrary.Sllz
 
             while (inputPosition < inputData.Length)
             {
-                Tuple<int, int> match = FindMatch(inputData, inputPosition);
+                uint windowSize = Math.Min(inputPosition, MAX_WINDOW_SIZE);
+                uint maxOffsetLength = Math.Min((uint)(inputData.Length - inputPosition), MAX_ENCODED_LENGTH);
+
+                Tuple<uint, uint> match = FindMatch(inputData, inputPosition, windowSize, maxOffsetLength);
 
                 if (match == null)
                 {
@@ -146,11 +159,19 @@ namespace ParLibrary.Sllz
                         flagPosition = outputPosition;
                         outputData[flagPosition] = 0x00;
                         outputPosition++;
+                        if (outputPosition >= outputSize)
+                        {
+                            throw new SllzCompressorException("Compressed size is bigger than original size.");
+                        }
                     }
 
                     outputData[outputPosition] = inputData[inputPosition];
                     inputPosition++;
                     outputPosition++;
+                    if (outputPosition >= outputSize)
+                    {
+                        throw new SllzCompressorException("Compressed size is bigger than original size.");
+                    }
                 }
                 else
                 {
@@ -166,17 +187,27 @@ namespace ParLibrary.Sllz
                         flagPosition = outputPosition;
                         outputData[flagPosition] = 0x00;
                         outputPosition++;
+
+                        if (outputPosition >= outputSize)
+                        {
+                            throw new SllzCompressorException("Compressed size is bigger than original size.");
+                        }
                     }
 
-                    short offset = (short)((match.Item1 - 1) << 4);
-                    short size = (short)((match.Item2 - 3) & 0x0F);
+                    var offset = (short)((match.Item1 - 1) << 4);
+                    var size = (short)((match.Item2 - 3) & 0x0F);
 
-                    short tuple = (short)(offset | size);
+                    var tuple = (short)(offset | size);
 
                     outputData[outputPosition] = (byte)tuple;
                     outputPosition++;
                     outputData[outputPosition] = (byte)(tuple >> 8);
                     outputPosition++;
+
+                    if (outputPosition >= outputSize)
+                    {
+                        throw new SllzCompressorException("Compressed size is bigger than original size.");
+                    }
 
                     inputPosition += match.Item2;
                 }
@@ -184,7 +215,7 @@ namespace ParLibrary.Sllz
 
             outputData[flagPosition] = currentFlag;
 
-            DataStream outputDataStream = DataStreamFactory.FromArray(outputData, 0, outputPosition);
+            DataStream outputDataStream = DataStreamFactory.FromArray(outputData, 0, (int)outputPosition);
             return outputDataStream;
         }
 
@@ -199,7 +230,7 @@ namespace ParLibrary.Sllz
                 Endianness = EndiannessMode.BigEndian,
             };
 
-            int currentPosition = 0;
+            var currentPosition = 0;
 
             while (currentPosition < input.Length)
             {
@@ -223,47 +254,28 @@ namespace ParLibrary.Sllz
             return outputDataStream;
         }
 
-        private static Tuple<int, int> FindMatch(IReadOnlyList<byte> inputData, int readPosition)
+        private static Tuple<uint, uint> FindMatch(byte[] inputData, uint inputPosition, uint windowSize, uint maxOffsetLength)
         {
-            int bestPosition = 0;
-            int bestLength = 1;
+            ReadOnlySpan<byte> bytes = inputData;
+            ReadOnlySpan<byte> data = bytes.Slice((int)(inputPosition - windowSize), (int)windowSize);
 
-            int current = readPosition - 1;
+            uint currentLength = maxOffsetLength;
 
-            int startPos = Math.Max(readPosition - SearchSize, 0);
-
-            while (current >= startPos)
+            while (currentLength >= 3)
             {
-                if (inputData[current] == inputData[readPosition])
+                ReadOnlySpan<byte> pattern = bytes.Slice((int)inputPosition, (int)currentLength);
+
+                int pos = data.LastIndexOf(pattern);
+
+                if (pos >= 0)
                 {
-                    int maxLength = Math.Min(inputData.Count - readPosition, MaxLength);
-                    maxLength = Math.Min(maxLength, readPosition - current);
-                    int length = DataCompare(inputData, current + 1, readPosition + 1, maxLength);
-                    if (length > bestLength)
-                    {
-                        bestLength = length;
-                        bestPosition = current;
-                    }
+                    return new Tuple<uint, uint>((uint)(windowSize - pos), currentLength);
                 }
 
-                current--;
+                currentLength--;
             }
 
-            return bestLength >= 3 ? new Tuple<int, int>(readPosition - bestPosition, bestLength) : null;
-        }
-
-        private static int DataCompare(IReadOnlyList<byte> input, int pos1, int pos2, int maxLength)
-        {
-            int length = 1;
-
-            while (length < maxLength && input[pos1] == input[pos2])
-            {
-                pos1++;
-                pos2++;
-                length++;
-            }
-
-            return length;
+            return null;
         }
 
         private static byte[] ZlibCompress(byte[] decompressedData)

@@ -100,14 +100,28 @@ namespace ParLibrary.Converter
             dataPosition = Align(dataPosition, 2048);
 
             writer.Write("PARC", 4, false);
-            if (source.Root.Tags.ContainsKey("Endianness"))
+
+            if (source.Root.Tags.ContainsKey("PlatformId"))
             {
-                writer.Write((int)source.Root.Tags["Endianness"]);
+                writer.Write((byte)source.Root.Tags["PlatformId"]);
             }
             else
             {
-                writer.Write(0x02010000);
+                writer.Write((byte)0x02);
             }
+
+            if (source.Root.Tags.ContainsKey("Endianness"))
+            {
+                var endianness = (byte)source.Root.Tags["Endianness"];
+                writer.Write(endianness);
+                writer.Endianness = endianness == 0x00 ? EndiannessMode.LittleEndian : EndiannessMode.BigEndian;
+            }
+            else
+            {
+                writer.Write((byte)0x01);
+            }
+
+            writer.Write((ushort)0x0000); // extended size and relocated
 
             if (source.Root.Tags.ContainsKey("Version"))
             {
@@ -118,14 +132,7 @@ namespace ParLibrary.Converter
                 writer.Write(0x00020001);
             }
 
-            if (source.Root.Tags.ContainsKey("DataSize"))
-            {
-                writer.Write((int)source.Root.Tags["DataSize"]);
-            }
-            else
-            {
-                writer.Write(0x00000000);
-            }
+            writer.Write(0x00000000); // data size
 
             writer.Write(folders.Count);
             writer.Write(folderTableOffset);
@@ -153,7 +160,7 @@ namespace ParLibrary.Converter
         private static void GetFoldersAndFiles(Node root, ICollection<Node> folders, ICollection<Node> files, ParArchiveWriterParameters parameters)
         {
             int folderIndex = folders.Count;
-            int fileIndex = 0;
+            var fileIndex = 0;
 
             var queue = new Queue<Node>();
 
@@ -168,9 +175,9 @@ namespace ParLibrary.Converter
                 folder.Tags["FirstFileIndex"] = fileIndex;
                 folder.Tags["FileCount"] = 0;
                 folder.Tags["Attributes"] = 0x00000010;
-                folder.Tags["Unknown2"] = 0x00000000;
-                folder.Tags["Unknown3"] = 0x00000000;
-                folder.Tags["Unknown4"] = 0x00000000;
+                folder.Tags["Unused1"] = 0x00000000;
+                folder.Tags["Unused2"] = 0x00000000;
+                folder.Tags["Unused3"] = 0x00000000;
 
                 foreach (Node child in folder.Children)
                 {
@@ -227,16 +234,18 @@ namespace ParLibrary.Converter
             Parallel.ForEach(files, node =>
             {
                 var parFile = node.GetFormatAs<ParFile>();
-                if (parFile == null || !parFile.CanBeCompressed || compressorVersion == 0x00 || parFile.Stream.Length == 0)
+                if (parFile == null || !parFile.CanBeCompressed || compressorVersion == 0x00 ||
+                    parFile.Stream.Length == 0)
                 {
                     return;
                 }
 
                 FileCompressing?.Invoke(node);
-                var compressed = (ParFile)ConvertFormat.With<Compressor, CompressorParameters>(compressorParameters, parFile);
+                var compressed =
+                    (ParFile)ConvertFormat.With<Compressor, CompressorParameters>(compressorParameters, parFile);
 
                 long diff = parFile.Stream.Length - compressed.Stream.Length;
-                if (diff > 0 && (parFile.Stream.Length < 2048 || diff >= 2048))
+                if (diff >= 0 && (parFile.Stream.Length < 2048 || diff >= 2048))
                 {
                     node.ChangeFormat(compressed);
                 }
@@ -268,7 +277,7 @@ namespace ParLibrary.Converter
         {
             foreach (Node node in folders)
             {
-                int attributes = 0x00000010;
+                var attributes = 0x00000010;
                 if (node.Tags.ContainsKey("DirectoryInfo"))
                 {
                     DirectoryInfo info = node.Tags["DirectoryInfo"];
@@ -285,9 +294,9 @@ namespace ParLibrary.Converter
                 writer.Write((int)node.Tags["FileCount"]);
                 writer.Write((int)node.Tags["FirstFileIndex"]);
                 writer.Write(attributes);
-                writer.Write((int)node.Tags["Unknown2"]);
-                writer.Write((int)node.Tags["Unknown3"]);
-                writer.Write((int)node.Tags["Unknown4"]);
+                writer.Write(0x00000000);
+                writer.Write(0x00000000);
+                writer.Write(0x00000000);
             }
         }
 
@@ -325,9 +334,9 @@ namespace ParLibrary.Converter
                 DateTime date = parFile.FileDate;
                 var baseDate = new DateTime(1970, 1, 1);
 
-                if (node.Tags.ContainsKey("Date"))
+                if (node.Tags.ContainsKey("Timestamp"))
                 {
-                    date = baseDate.AddSeconds(node.Tags["Date"]);
+                    date = baseDate.AddSeconds(node.Tags["Timestamp"]);
                 }
 
                 if (node.Tags.ContainsKey("FileInfo"))
@@ -337,15 +346,14 @@ namespace ParLibrary.Converter
                     date = info.LastWriteTime;
                 }
 
-                int seconds = (int)(date - baseDate).TotalSeconds;
+                var seconds = (ulong)(date - baseDate).TotalSeconds;
 
                 writer.Write(parFile.IsCompressed ? 0x80000000 : 0x00000000);
                 writer.Write(parFile.DecompressedSize);
                 writer.Write((uint)node.Stream.Length);
                 writer.Write((uint)dataPosition);
                 writer.Write(attributes);
-                writer.Write(parFile.Unknown2);
-                writer.Write(parFile.Unknown3);
+                writer.Write((uint)(dataPosition >> 32));
                 writer.Write(seconds);
 
                 writer.Stream.PushToPosition(0, SeekMode.End);

@@ -58,7 +58,7 @@ namespace ParTool
                         }
                     }
 
-                    HelpText helpText = HelpText.AutoBuild(
+                    var helpText = HelpText.AutoBuild(
                         parserResult,
                         h =>
                         {
