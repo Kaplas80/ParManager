@@ -6,7 +6,6 @@ ParLibrary is a .NET library for reading and writing Yakuza PAR archives.
 It supports ***SLLZ*** compression (Including ***SLLZ V2*** used in Yakuza Kiwami 2)
 
 # ParTool
-> ParTool is a .NET Core 3.1 command line application. Install [.NET Core Runtime](https://dotnet.microsoft.com/download) to execute it.
 
 ## Usage
 - **List mode**
