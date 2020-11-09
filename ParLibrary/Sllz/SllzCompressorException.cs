@@ -28,7 +28,7 @@ namespace ParLibrary.Sllz
         /// Initializes a new instance of the <see cref="SllzCompressorException"/> class.
         /// </summary>
         /// <param name="message">Exception message.</param>
-        /// <param name="innerException">Inner exception</param>
+        /// <param name="innerException">Inner exception.</param>
         public SllzCompressorException(string message, Exception innerException)
             : base(message, innerException)
         {
