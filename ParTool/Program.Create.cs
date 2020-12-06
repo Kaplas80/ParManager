@@ -46,7 +46,7 @@ namespace ParTool
 
             Console.Write("Reading input directory... ");
             string nodeName = new DirectoryInfo(opts.InputDirectory).Name;
-            Node node = NodeFactory.FromDirectory(opts.InputDirectory, "*", nodeName, true);
+            Node node = ReadDirectory(opts.InputDirectory, nodeName);
 
 #pragma warning disable CA1308 // Normalize strings to uppercase
             node.SortChildren((x, y) => string.CompareOrdinal(x.Name.ToLowerInvariant(), y.Name.ToLowerInvariant()));
