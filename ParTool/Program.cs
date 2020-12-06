@@ -7,6 +7,7 @@ namespace ParTool
     using System.IO;
     using CommandLine;
     using CommandLine.Text;
+    using Yarhl.FileSystem;
 
     /// <summary>
     /// Main program.
@@ -77,6 +78,40 @@ namespace ParTool
             Console.WriteLine(CommandLine.Text.HeadingInfo.Default);
             Console.WriteLine(CommandLine.Text.CopyrightInfo.Default);
             Console.WriteLine();
+        }
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute(
+            "Reliability",
+            "CA2000:Dispose objects before losing scope",
+            Justification = "Ownserhip dispose transferred")]
+        private static Node ReadDirectory(string dirPath, string nodeName = "")
+        {
+            dirPath = Path.GetFullPath(dirPath);
+
+            if (string.IsNullOrEmpty(nodeName))
+            {
+                nodeName = Path.GetFileName(dirPath);
+            }
+
+            Node container = Yarhl.FileSystem.NodeFactory.CreateContainer(nodeName);
+            var directoryInfo = new DirectoryInfo(dirPath);
+            container.Tags["DirectoryInfo"] = directoryInfo;
+
+            var files = directoryInfo.GetFiles();
+            foreach (FileInfo file in files)
+            {
+                Node fileNode = Yarhl.FileSystem.NodeFactory.FromFile(file.FullName);
+                container.Add(fileNode);
+            }
+
+            var directories = directoryInfo.GetDirectories();
+            foreach (DirectoryInfo directory in directories)
+            {
+                Node directoryNode = ReadDirectory(directory.FullName);
+                container.Add(directoryNode);
+            }
+
+            return container;
         }
     }
 }

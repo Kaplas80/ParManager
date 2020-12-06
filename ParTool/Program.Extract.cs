@@ -54,17 +54,18 @@ namespace ParTool
         {
             foreach (Node node in Navigator.IterateNodes(parNode))
             {
+                string fileInfoPath = node.Path.Substring(parNode.Path.Length).Replace('/', Path.DirectorySeparatorChar);
+                string outputPath = Path.Join(outputFolder, fileInfoPath);
+
                 var file = node.GetFormatAs<ParFile>();
+
                 if (file == null)
                 {
+                    Directory.CreateDirectory(outputPath);
                     continue;
                 }
 
                 Console.Write($"Extracting {node.Path}... ");
-
-                string fileInfoPath = node.Path.Substring(parNode.Path.Length).Replace('/', Path.DirectorySeparatorChar);
-                string outputPath = Path.Join(outputFolder, fileInfoPath);
-                Directory.CreateDirectory(Path.GetDirectoryName(outputPath));
 
                 if (file.IsCompressed)
                 {

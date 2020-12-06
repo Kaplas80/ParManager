@@ -62,7 +62,7 @@ namespace ParTool
 
             Console.Write("Reading input directory... ");
             string nodeName = new DirectoryInfo(opts.AddDirectory).Name;
-            Node node = NodeFactory.FromDirectory(opts.AddDirectory, "*", nodeName, true);
+            Node node = ReadDirectory(opts.AddDirectory, nodeName);
             node.TransformWith<ParArchiveWriter, ParArchiveWriterParameters>(writerParameters).TransformWith<ParArchiveReader, ParArchiveReaderParameters>(readerParameters);
             Console.WriteLine("DONE!");
 
