@@ -138,6 +138,11 @@ namespace ParLibrary.Sllz
             outputData[flagPosition] = 0x00;
             outputPosition++;
 
+            if (outputPosition >= outputSize)
+            {
+                throw new SllzCompressorException("Compressed size is bigger than original size.");
+            }
+
             while (inputPosition < inputData.Length)
             {
                 uint windowSize = Math.Min(inputPosition, MAX_WINDOW_SIZE);
@@ -168,6 +173,7 @@ namespace ParLibrary.Sllz
                     outputData[outputPosition] = inputData[inputPosition];
                     inputPosition++;
                     outputPosition++;
+
                     if (outputPosition >= outputSize)
                     {
                         throw new SllzCompressorException("Compressed size is bigger than original size.");
@@ -201,6 +207,12 @@ namespace ParLibrary.Sllz
 
                     outputData[outputPosition] = (byte)tuple;
                     outputPosition++;
+
+                    if (outputPosition >= outputSize)
+                    {
+                        throw new SllzCompressorException("Compressed size is bigger than original size.");
+                    }
+
                     outputData[outputPosition] = (byte)(tuple >> 8);
                     outputPosition++;
 
