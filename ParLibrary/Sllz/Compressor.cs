@@ -1,4 +1,4 @@
-﻿// -------------------------------------------------------
+// -------------------------------------------------------
 // © Kaplas. Licensed under MIT. See LICENSE for details.
 // -------------------------------------------------------
 namespace ParLibrary.Sllz
@@ -237,10 +237,7 @@ namespace ParLibrary.Sllz
             inputDataStream.Read(input, 0, input.Length);
 
             DataStream outputDataStream = DataStreamFactory.FromMemory();
-            var writer = new DataWriter(outputDataStream)
-            {
-                Endianness = EndiannessMode.BigEndian,
-            };
+            var writer = new DataWriter(outputDataStream);
 
             var currentPosition = 0;
 
@@ -256,9 +253,10 @@ namespace ParLibrary.Sllz
                 writer.Write((byte)(compressedDataLength >> 16));
                 writer.Write((byte)(compressedDataLength >> 8));
                 writer.Write((byte)compressedDataLength);
-                writer.Write((ushort)(decompressedChunkSize - 1));
+                int temp = decompressedChunkSize - 1;
+                writer.Write((byte)(temp >> 8));
+                writer.Write((byte)temp);
                 writer.Write(compressedData);
-                writer.WriteTimes(0, 5);
 
                 currentPosition += decompressedChunkSize;
             }
