@@ -1,4 +1,4 @@
-﻿// -------------------------------------------------------
+// -------------------------------------------------------
 // © Kaplas. Licensed under MIT. See LICENSE for details.
 // -------------------------------------------------------
 namespace ParLibrary.Converter
@@ -109,7 +109,7 @@ namespace ParLibrary.Converter
                 fileNames[i] = reader.ReadString(0x40).TrimEnd('\0');
             }
 
-            reader.Stream.Seek(folderInfoOffset);
+            reader.Stream.Seek(folderInfoOffset, System.IO.SeekOrigin.Begin);
             var folders = new Node[totalFolderCount];
 
             for (var i = 0; i < totalFolderCount; i++)
@@ -130,7 +130,7 @@ namespace ParLibrary.Converter
                 };
             }
 
-            reader.Stream.Seek(fileInfoOffset);
+            reader.Stream.Seek(fileInfoOffset, System.IO.SeekOrigin.Begin);
             var files = new Node[totalFileCount];
 
             for (var i = 0; i < totalFileCount; i++)

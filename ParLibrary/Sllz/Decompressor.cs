@@ -1,4 +1,4 @@
-﻿// -------------------------------------------------------
+// -------------------------------------------------------
 // © Kaplas. Licensed under MIT. See LICENSE for details.
 // -------------------------------------------------------
 namespace ParLibrary.Sllz
@@ -48,7 +48,7 @@ namespace ParLibrary.Sllz
                 DefaultEncoding = Encoding.ASCII,
             };
 
-            inputDataStream.Seek(0, SeekMode.Start);
+            inputDataStream.Seek(0);
 
             string magic = reader.ReadString(4);
 
@@ -65,7 +65,7 @@ namespace ParLibrary.Sllz
             int decompressedSize = reader.ReadInt32();
             int compressedSize = reader.ReadInt32();
 
-            reader.Stream.Seek(headerSize, SeekMode.Start);
+            reader.Stream.Seek(headerSize, SeekOrigin.Begin);
 
             if (version == 1)
             {

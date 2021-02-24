@@ -1,4 +1,4 @@
-﻿// -------------------------------------------------------
+// -------------------------------------------------------
 // © Kaplas. Licensed under MIT. See LICENSE for details.
 // -------------------------------------------------------
 namespace ParLibrary.Converter
@@ -145,7 +145,7 @@ namespace ParLibrary.Converter
             WriteFolders(writer, folders);
             WriteFiles(writer, files, dataPosition);
 
-            dataStream.Seek(0, SeekMode.End);
+            dataStream.Seek(0, SeekOrigin.End);
             writer.WritePadding(0, 2048);
 
             var result = new ParFile(dataStream)
@@ -356,11 +356,12 @@ namespace ParLibrary.Converter
                 writer.Write((uint)(dataPosition >> 32));
                 writer.Write(seconds);
 
-                writer.Stream.PushToPosition(0, SeekMode.End);
+                long currentPos = writer.Stream.Position;
+                writer.Stream.Seek(0, SeekOrigin.End);
                 writer.WriteUntilLength(0, dataPosition);
                 node.Stream.WriteTo(writer.Stream);
                 dataPosition = writer.Stream.Position;
-                writer.Stream.PopPosition();
+                writer.Stream.Seek(currentPos, SeekOrigin.Begin);
             }
         }
     }

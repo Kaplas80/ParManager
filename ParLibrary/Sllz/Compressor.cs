@@ -39,7 +39,7 @@ namespace ParLibrary.Sllz
                 throw new ArgumentNullException(nameof(source));
             }
 
-            source.Stream.Seek(0, SeekMode.Start);
+            source.Stream.Seek(0);
 
             DataStream outputDataStream = Compress(source.Stream, this.compressorParameters);
 
@@ -109,10 +109,10 @@ namespace ParLibrary.Sllz
             writer.Write(parameters.Version);
             writer.Write((ushort)0x10); // Header size
             writer.Write((int)inputDataStream.Length);
-            writer.Stream.PushCurrentPosition();
+            long currentPos = writer.Stream.Position;
             writer.Write(0x00000000); // Compressed size
             compressedDataStream.WriteTo(outputDataStream);
-            writer.Stream.PopPosition();
+            writer.Stream.Seek(currentPos, SeekOrigin.Begin);
             writer.Write((int)(compressedDataStream.Length + 0x10)); // data + header
 
             compressedDataStream.Dispose();
