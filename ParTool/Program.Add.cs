@@ -1,4 +1,4 @@
-﻿// -------------------------------------------------------
+// -------------------------------------------------------
 // © Kaplas. Licensed under MIT. See LICENSE for details.
 // -------------------------------------------------------
 namespace ParTool
@@ -55,7 +55,7 @@ namespace ParTool
             };
 
             Console.Write("Reading PAR file... ");
-            Node par = NodeFactory.FromFile(opts.InputParArchivePath);
+            Node par = NodeFactory.FromFile(opts.InputParArchivePath, Yarhl.IO.FileOpenMode.Read);
             par.TransformWith<ParArchiveReader, ParArchiveReaderParameters>(readerParameters);
             writerParameters.IncludeDots = par.Children[0].Name == ".";
             Console.WriteLine("DONE!");

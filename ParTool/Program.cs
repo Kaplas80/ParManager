@@ -1,4 +1,4 @@
-﻿// -------------------------------------------------------
+// -------------------------------------------------------
 // © Kaplas. Licensed under MIT. See LICENSE for details.
 // -------------------------------------------------------
 namespace ParTool
@@ -100,7 +100,7 @@ namespace ParTool
             var files = directoryInfo.GetFiles();
             foreach (FileInfo file in files)
             {
-                Node fileNode = Yarhl.FileSystem.NodeFactory.FromFile(file.FullName);
+                Node fileNode = Yarhl.FileSystem.NodeFactory.FromFile(file.FullName, Yarhl.IO.FileOpenMode.Read);
                 container.Add(fileNode);
             }
 
