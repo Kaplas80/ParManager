@@ -1,4 +1,4 @@
-﻿// -------------------------------------------------------
+// -------------------------------------------------------
 // © Kaplas. Licensed under MIT. See LICENSE for details.
 // -------------------------------------------------------
 namespace ParTool
@@ -42,7 +42,7 @@ namespace ParTool
                 Recursive = true,
             };
 
-            using Node par = NodeFactory.FromFile(opts.InputParArchivePath);
+            using Node par = NodeFactory.FromFile(opts.InputParArchivePath, Yarhl.IO.FileOpenMode.Read);
             par.TransformWith<ParArchiveReader, ParArchiveReaderParameters>(readerParameters);
 
             Node foundNode = Navigator.SearchNode(par, opts.RemovePath);
