@@ -12,7 +12,7 @@
   <ItemGroup>
     <PackageReference Include="Ionic.Zlib.Core" Version="1.0.0" />
     <PackageReference Include="System.Text.Encoding.CodePages" Version="5.0.0" />
-    <PackageReference Include="Yarhl" Version="3.1.1-preview.9" />
+    <PackageReference Include="Yarhl" Version="3.1.1-preview.13" />
   </ItemGroup>
 
 </Project>
