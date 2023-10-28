@@ -157,9 +157,9 @@ namespace ParLibrary.Sllz
                 int compressedChunkSize = (inputData[inputPosition] << 16) | (inputData[inputPosition + 1] << 8) | inputData[inputPosition + 2];
                 int decompressedChunkSize = ((inputData[inputPosition + 3] << 8) | inputData[inputPosition + 4]) + 1;
 
-                bool flag = (inputData[inputPosition] & 0x80) == 0x80;
+                bool isCompressed = (compressedChunkSize & 0x00800000) == 0x00000000;
 
-                if (!flag)
+                if (isCompressed)
                 {
                     byte[] decompressedData = ZlibDecompress(inputData, inputPosition + 5, compressedChunkSize - 5);
 
@@ -173,9 +173,10 @@ namespace ParLibrary.Sllz
                 }
                 else
                 {
-                    // I haven't found any file with this compression
-                    // The code is in FUN_141e27350 (YakuzaKiwami2.exe v1.4)
-                    throw new FormatException("SLLZ: Not ZLIB compression.");
+                    // The data isn't compressed in this chunk, just copy it
+                    compressedChunkSize = (int)(compressedChunkSize & 0xFF7FFFFF);
+                    Array.Copy(inputData, inputPosition + 5, outputData, outputPosition, decompressedChunkSize);
+                    inputPosition += compressedChunkSize;
                 }
 
                 outputPosition += decompressedChunkSize;
