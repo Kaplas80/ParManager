@@ -144,6 +144,7 @@ namespace ParLibrary.Converter
                 ulong timestamp = reader.ReadUInt64();
 
                 long offset = ((long)extendedOffset << 32) | baseOffset;
+                offset &= 0x00FFFFFFFFFFFFFF;
                 var file = new ParFile(source.Stream, offset, compressedSize)
                 {
                     CanBeCompressed = false, // Don't try to compress if the original was not compressed.
