@@ -37,7 +37,8 @@ namespace ParTool
                 var file = node.GetFormatAs<ParFile>();
                 if (file != null)
                 {
-                    Console.WriteLine($"{node.Path}\t{file.DecompressedSize} bytes\t{file.FileDate:G}");
+                    var compression = file.IsCompressed ? "*" : string.Empty;
+                    Console.WriteLine($"{node.Path}{compression}\t{file.DecompressedSize} bytes\t{file.FileDate:G}");
                 }
             }
         }
