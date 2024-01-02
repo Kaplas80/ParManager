@@ -10,19 +10,27 @@ It supports ***SLLZ*** compression (Including ***SLLZ V2*** used in Yakuza Kiwam
 ## Usage
 - **List mode**
 
-  `ParTool.exe list <archive.par> [-r]`
+  `ParTool.exe list <archive.par> [-r] [--filter "<regex filter>"]`
   
   Reads a PAR archive and shows it contents.
   
   `-r` parameter enables *recursive* mode and shows the contents of nested PAR archives.
+
+  `--filter` parameter filters output lines using a user-provided regular expression.
   
 - **Extraction mode**
 
-  `ParTool.exe extract <archive.par> <output_directory> [-r]`
+  `ParTool.exe extract <archive.par> <output_directory> [-r] [--filter "<regex filter>"]`
   
   Extracts the PAR archive contents to the specified directory.
   
   `-r` parameter enables *recursive* mode and extracts the contents of nested PAR archives.
+
+  `--filter` parameter filters extracted files using a user-provided regular expression.
+  Files that do not match the filter will not be extracted.
+  Directories are always extracted.
+  When combined with `-r`, files matching the filter inside nested PAR archives will be extracted.
+
   
 - **Creation mode**
 

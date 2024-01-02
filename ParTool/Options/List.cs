@@ -1,5 +1,5 @@
 ﻿// -------------------------------------------------------
-// © Kaplas. Licensed under MIT. See LICENSE for details.
+// © Kaplas, Samuel W. Stark (TheTurboTurnip). Licensed under MIT. See LICENSE for details.
 // -------------------------------------------------------
 namespace ParTool.Options
 {
@@ -25,9 +25,9 @@ namespace ParTool.Options
         public bool Recursive { get; set; }
 
         /// <summary>
-        /// Gets or sets a value used as a Regex filter for which real-files to extract.
+        /// Gets or sets a value used as a Regex filter for which files to list.
         /// </summary>
-        [Option("filter", Default = null, HelpText = "Only extract files that match this RegEx (directories will always be extracted)")]
+        [Option("filter", Default = null, HelpText = "Only list files that match this RegEx")]
         public string FilterRegex { get; set; }
     }
 }

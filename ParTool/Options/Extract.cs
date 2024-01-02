@@ -31,7 +31,7 @@ namespace ParTool.Options
         public bool Recursive { get; set; }
 
         /// <summary>
-        /// Gets or sets a value used as a Regex filter for which real-files to extract.
+        /// Gets or sets a value used as a Regex filter for which files to extract.
         /// </summary>
         [Option("filter", Default = null, HelpText = "Only extract files that match this RegEx (directories will always be extracted)")]
         public string FilterRegex { get; set; }

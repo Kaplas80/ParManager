@@ -1,5 +1,5 @@
 // -------------------------------------------------------
-// © Kaplas. Licensed under MIT. See LICENSE for details.
+// © Kaplas, Samuel W. Stark (TheTurboTurnip). Licensed under MIT. See LICENSE for details.
 // -------------------------------------------------------
 namespace ParTool
 {
@@ -72,7 +72,7 @@ namespace ParTool
                 // If the filterRegex exists, skip files that don't match it
                 if (filterRegex != null && !filterRegex.IsMatch(node.Path))
                 {
-                    Console.WriteLine($"Skipping {node.Path} because it doesn't match the filter");
+                    Console.WriteLine($"Skipping {node.Path}");
                     continue;
                 }
 
