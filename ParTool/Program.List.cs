@@ -5,6 +5,7 @@ namespace ParTool
 {
     using System;
     using System.IO;
+    using System.Text.RegularExpressions;
     using ParLibrary;
     using ParLibrary.Converter;
     using Yarhl.FileSystem;
@@ -24,6 +25,9 @@ namespace ParTool
                 return;
             }
 
+            // If a FilterRegex was specified (i.e. is not null) then make a new Regex using it. Otherwise, set filterRegex to null.
+            var filterRegex = (opts.FilterRegex == null) ? null : new Regex(opts.FilterRegex);
+
             var parameters = new ParArchiveReaderParameters
             {
                 Recursive = opts.Recursive,
@@ -37,6 +41,12 @@ namespace ParTool
                 var file = node.GetFormatAs<ParFile>();
                 if (file != null)
                 {
+                    // If the filterRegex exists, skip files that don't match it
+                    if (filterRegex != null && !filterRegex.IsMatch(node.Path))
+                    {
+                        continue;
+                    }
+
                     var compression = file.IsCompressed ? "*" : string.Empty;
                     Console.WriteLine($"{node.Path}{compression}\t{file.DecompressedSize} bytes\t{file.FileDate:G}");
                 }
