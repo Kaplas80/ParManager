@@ -10,20 +10,39 @@ It supports ***SLLZ*** compression (Including ***SLLZ V2*** used in Yakuza Kiwam
 ## Usage
 - **List mode**
 
-  `ParTool.exe list <archive.par> [-r]`
+  `ParTool.exe list <archive.par> [-r] [--filter '<regex filter>']`
   
   Reads a PAR archive and shows it contents.
   
   `-r` parameter enables *recursive* mode and shows the contents of nested PAR archives.
+
+  `--filter` parameter filters output lines using a user-provided regular expression.
+
+  For example, `ParTool.exe list mesh.par -r --filter '\.gmd$'` will only list GMD files (files that end with the characters '.gmd').
+  See [https://regexr.com/7q33s] for an explanation of this regular expression, and [the .NET Regular Expression Quick Reference](https://learn.microsoft.com/en-us/dotnet/standard/base-types/regular-expression-language-quick-reference) for a complete guide to the syntax.
   
+  If using Powershell, use single quotes `'` to surround the expression to avoid variable expansion [(see the Powershell docs)](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_quoting_rules?view=powershell-7.4#single-quoted-strings).
+  If using Command Prompt, use double quotes.
+
 - **Extraction mode**
 
-  `ParTool.exe extract <archive.par> <output_directory> [-r]`
+  `ParTool.exe extract <archive.par> <output_directory> [-r] [--filter '<regex filter>']`
   
   Extracts the PAR archive contents to the specified directory.
   
   `-r` parameter enables *recursive* mode and extracts the contents of nested PAR archives.
-  
+
+  `--filter` parameter filters extracted files using a user-provided regular expression.
+  Files that do not match the filter will not be extracted.
+  Directories are always extracted.
+  When combined with `-r`, files matching the filter inside nested PAR archives will be extracted.
+
+  For example, `ParTool.exe extract mesh.par -r --filter '\.gmd$'` will only extract GMD files (files that end with the characters '.gmd').
+  See [https://regexr.com/7q33s] for an explanation of this regular expression, and [the .NET Regular Expression Quick Reference](https://learn.microsoft.com/en-us/dotnet/standard/base-types/regular-expression-language-quick-reference) for a complete guide to the syntax.
+
+  If using Powershell, use single quotes `'` to surround the expression to avoid variable expansion [(see the Powershell docs)](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_quoting_rules?view=powershell-7.4#single-quoted-strings).
+  If using Command Prompt, use double quotes.
+
 - **Creation mode**
 
   `ParTool.exe create <input_directory> <archive.par> [-c compression_mode] [--alternative-mode]`

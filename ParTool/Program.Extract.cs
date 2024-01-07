@@ -1,10 +1,11 @@
 // -------------------------------------------------------
-// © Kaplas. Licensed under MIT. See LICENSE for details.
+// © Kaplas, Samuel W. Stark (TheTurboTurnip). Licensed under MIT. See LICENSE for details.
 // -------------------------------------------------------
 namespace ParTool
 {
     using System;
     using System.IO;
+    using System.Text.RegularExpressions;
     using ParLibrary;
     using ParLibrary.Converter;
     using Yarhl.FileSystem;
@@ -39,6 +40,9 @@ namespace ParTool
 
             Directory.CreateDirectory(opts.OutputDirectory);
 
+            // If a FilterRegex was specified (i.e. is not null) then make a new Regex using it. Otherwise, set filterRegex to null.
+            var filterRegex = (opts.FilterRegex == null) ? null : new Regex(opts.FilterRegex);
+
             var parameters = new ParArchiveReaderParameters
             {
                 Recursive = opts.Recursive,
@@ -47,10 +51,10 @@ namespace ParTool
             using Node par = NodeFactory.FromFile(opts.ParArchivePath, Yarhl.IO.FileOpenMode.Read);
             par.TransformWith<ParArchiveReader, ParArchiveReaderParameters>(parameters);
 
-            Extract(par, opts.OutputDirectory);
+            Extract(par, filterRegex, opts.OutputDirectory);
         }
 
-        private static void Extract(Node parNode, string outputFolder)
+        private static void Extract(Node parNode, Regex filterRegex, string outputFolder)
         {
             foreach (Node node in Navigator.IterateNodes(parNode))
             {
@@ -62,6 +66,13 @@ namespace ParTool
                 if (file == null)
                 {
                     Directory.CreateDirectory(outputPath);
+                    continue;
+                }
+
+                // If the filterRegex exists, skip files that don't match it
+                if (filterRegex != null && !filterRegex.IsMatch(node.Path))
+                {
+                    Console.WriteLine($"Skipping {node.Path}");
                     continue;
                 }
 
