@@ -1,9 +1,11 @@
-﻿namespace ParLib.UnitTests
+﻿// -------------------------------------------------------
+// © Samuel W. Stark (TheTurboTurnip). Licensed under MIT. See LICENSE for details.
+// -------------------------------------------------------
+namespace ParLib.UnitTests
 {
+    using System.IO;
     using NUnit.Framework;
     using ParLibrary.Converter;
-    using System;
-    using System.IO;
     using Yarhl.FileSystem;
 
     public class ZeroLengthPar
