@@ -12,5 +12,10 @@ namespace ParLibrary.Converter
         /// Gets or sets a value indicating whether the reading is recursive.
         /// </summary>
         public bool Recursive { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether zero-length PARs cause an error or not.
+        /// </summary>
+        public bool AllowZeroLengthPars { get; set; }
     }
 }
