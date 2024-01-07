@@ -19,4 +19,10 @@
     <ProjectReference Include="..\..\ParLibrary\ParLibrary.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="test_par_containing_0b_par.par">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

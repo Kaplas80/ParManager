@@ -1,11 +1,12 @@
 // -------------------------------------------------------
-// © Kaplas. Licensed under MIT. See LICENSE for details.
+// © Kaplas, Samuel W. Stark (TheTurboTurnip). Licensed under MIT. See LICENSE for details.
 // -------------------------------------------------------
 namespace ParLibrary.Converter
 {
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
+    using System.IO;
     using System.Text;
     using Yarhl.FileFormat;
     using Yarhl.FileSystem;
@@ -42,6 +43,18 @@ namespace ParLibrary.Converter
             source.Stream.Position = 0;
 
             var result = new NodeContainerFormat();
+
+            if (source.Stream.Length == 0)
+            {
+                if (this.parameters.AllowZeroLengthPars)
+                {
+                    return result;
+                }
+                else
+                {
+                    throw new InvalidDataException("PAR stream is zero bytes long and cannot be read.");
+                }
+            }
 
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
