@@ -46,6 +46,9 @@ namespace ParTool
             var readerParameters = new ParArchiveReaderParameters
             {
                 Recursive = true,
+
+                // If we encounter a zero-length PAR at any point below the top level, we treat it as an empty directory.
+                AllowZeroLengthPars = true,
             };
 
             var writerParameters = new ParArchiveWriterParameters
@@ -56,8 +59,17 @@ namespace ParTool
 
             Console.Write("Reading PAR file... ");
             Node par = NodeFactory.FromFile(opts.InputParArchivePath, Yarhl.IO.FileOpenMode.Read);
+
+            // Warn the user if the top-level PAR they're using is a zero-length file.
+            // If it is, we can't infer the IncludeDots parameter.
+            if (par.Stream.Length == 0)
+            {
+                Console.WriteLine($"ERROR: \"{opts.InputParArchivePath}\" is an empty file, and contains no data. Use `ParTool.exe create` instead.");
+                return;
+            }
+
             par.TransformWith<ParArchiveReader, ParArchiveReaderParameters>(readerParameters);
-            writerParameters.IncludeDots = par.Children[0].Name == ".";
+            writerParameters.IncludeDots = (par.Children.Count > 0) && par.Children[0].Name == ".";
             Console.WriteLine("DONE!");
 
             Console.Write("Reading input directory... ");

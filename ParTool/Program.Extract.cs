@@ -42,9 +42,20 @@ namespace ParTool
             var parameters = new ParArchiveReaderParameters
             {
                 Recursive = opts.Recursive,
+
+                // If we encounter a zero-length PAR at any point, we treat it as an empty directory.
+                AllowZeroLengthPars = true,
             };
 
             using Node par = NodeFactory.FromFile(opts.ParArchivePath, Yarhl.IO.FileOpenMode.Read);
+
+            // For convenience, warn the user if the top-level PAR they're using is a zero-length file.
+            // We still use the AllowZeroLengthPARs parameter, in case a non-zero-length PAR contains a zero-length PAR and we're reading in recursive mode.
+            if (par.Stream.Length == 0)
+            {
+                Console.WriteLine($"WARNING: \"{opts.ParArchivePath}\" is an empty file, and contains no data.");
+            }
+
             par.TransformWith<ParArchiveReader, ParArchiveReaderParameters>(parameters);
 
             Extract(par, opts.OutputDirectory);
