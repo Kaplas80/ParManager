@@ -1,5 +1,5 @@
 // -------------------------------------------------------
-// © Kaplas. Licensed under MIT. See LICENSE for details.
+// © Kaplas, Samuel W. Stark (TheTurboTurnip). Licensed under MIT. See LICENSE for details.
 // -------------------------------------------------------
 namespace ParTool
 {
@@ -40,6 +40,9 @@ namespace ParTool
             var readerParameters = new ParArchiveReaderParameters
             {
                 Recursive = true,
+
+                // If we encounter a zero-length PAR at any point, we treat it as an empty directory.
+                AllowZeroLengthPars = true,
             };
 
             using Node par = NodeFactory.FromFile(opts.InputParArchivePath, Yarhl.IO.FileOpenMode.Read);
